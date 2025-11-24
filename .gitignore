@@ -1,0 +1,45 @@
+# Basic .gitignore for C projects
+# Compiled object files
+*.o
+*.obj
+*.lo
+*.la
+*.gch
+
+# executables
+*.exe
+*.out
+
+# Build directories
+/build/
+bin/
+obj/
+dist/
+Debug/
+Release/
+
+# Debugging symbols
+*.dSYM/
+core
+core.*
+
+# Editors and IDEs
+.idea/
+*.code-workspace
+*.sublime-*
+*.swp
+*~
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# Logs and archives
+*.log
+*.tar.gz
+*.zip
+
+# Ccache and other caches
+ccache/

@@ -1,0 +1,65 @@
+{
+	// See https://code.visualstudio.com/docs/editor/tasks for more details
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "build debug",
+			"type": "process",
+			"command": "make",
+			"windows": {
+				"command": "C:/MinGW64/bin/mingw32-make.exe",
+				"args": [
+					"debug"
+				],
+			},
+			"osx": {
+				"command": "/usr/bin/make",
+				"args": [
+					"debug"
+				]
+			},
+			"linux": {
+				"command": "/usr/bin/make",
+				"args": [
+					"debug"
+				]
+			},
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		},
+		{
+			"label": "build release",
+			"type": "process",
+			"command": "make",
+			"windows": {
+				"command": "C:/MinGW64/bin/mingw32-make.exe",
+				"args": [
+					"release"
+				],
+			},
+			"osx": {
+				"command": "/usr/bin/make",
+				"args": [
+					"release"
+				]
+			},
+			"linux": {
+				"command": "/usr/bin/make",
+				"args": [
+					"release"
+				]
+			},
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": {
+				"kind": "build",
+			}
+		}
+	]
+}
