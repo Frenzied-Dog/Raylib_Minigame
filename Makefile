@@ -36,7 +36,7 @@ win64_LIBS := -lraylib -lgdi32 -lwinmm
 # 3.2 macOS (mac)
 mac_CC := /usr/bin/clang
 mac_LIB_PATH := $(LIB_PATH_MAC)
-mac_ARGET := main_mac
+mac_TARGET := main_mac
 mac_LIBS := -lraylib -framework OpenGL -framework OpenAL -framework Cocoa -framework IOKit
 
 
