@@ -1,29 +1,35 @@
 #define RAYGUI_IMPLEMENTATION
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 
 #include "raylib.h"
 #include "raygui.h"
+#include "const.h"
+
+#include "tetris.h"
+// #include "snake.h"
+// #include "mineSweeper.h"
 
 int main()
 {
 	printf("raygui controls test suite\n");	
-	InitWindow(400, 200, "raygui - controls test suite");
+	InitWindow(400, 200, "NCKU Raylib MiniGames");
 	SetTargetFPS(60);
 
 	bool showMessageBox = false;
-	int state = 0;
+	menuState state = MAIN_MENU;
 	while (!WindowShouldClose())
 	{
 		// Draw
 		//----------------------------------------------------------------------------------
 		BeginDrawing();
 
-		if (state == 0) {
+		switch (state) {
+		case MAIN_MENU:
 			SetWindowSize(400, 200);
 			ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
-			if (GuiButton((Rectangle) { 24, 24, 120, 30 }, "#191#Show Message")) showMessageBox = true;
+			if (GuiButton((Rectangle) { 24, 24, 120, 30 }, "#191#Show Message"))
+				showMessageBox = true;
 
 			if (showMessageBox) {
 				int result = GuiMessageBox((Rectangle) { 85, 70, 250, 100 },
@@ -31,13 +37,26 @@ int main()
 
 				// printf("MessageBox result: %d\n", result);
 				if (result >= 0) showMessageBox = false;
-				if (result == 2) state = 1;
+				if (result == 2) state = STATE_TETRIS;
 			}
-		} else {
-			SetWindowSize(600, 400);
-			ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
-			if (GuiButton((Rectangle) { 80, 80, 120, 30 }, "#191#OWO")) state = 0;
+			break;
+		case STATE_TETRIS:
+			tetris(&state);
+			break;
+		case STATE_SNAKE:
+			// TODO:
+			break;
+		case STATE_MINESWEEPER:
+			// TODO:
+			break;
+		case STATE_DASH:
+			// TODO:
+			break;
+		default:
+			state = MAIN_MENU;
+			break;
 		}
+
 
 		EndDrawing();
 	}

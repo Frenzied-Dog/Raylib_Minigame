@@ -18,7 +18,7 @@
 ### 必備條件
 
 1.  **C 編譯器** (Windows: MinGW/GCC , macOS: Clang , Linux: GCC )。
-2.  **raylib 庫**：您需要將 raylib 的標頭檔放在專案的 `include/` 目錄，並將靜態庫檔案放在對應平台的 `lib/<platform>` (如 `lib/win32` ) 目錄下。
+2.  **raylib 庫**：您需要將 raylib 的標頭檔放在專案的 `include/` 目錄，並將靜態庫檔案放在對應平台的 `lib/<platform>` (如 `lib/win64` ) 目錄下。
 
 ### 📦 專案檔案結構 (輸出路徑)
 
@@ -73,8 +73,8 @@ make run
 
 | 模式        | 編譯器  | 指令範例 (單行)                                                                                                                                                        |
 | :---------- | :---------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Debug**   | `C:/MinGW64/bin/gcc.exe`      | `C:/MinGW64/bin/gcc.exe -g -fdiagnostics-color=always -I"include" src/*.c -o build/debug/main.exe -L"lib/win32" -lraylib -lgdi32 -lwinmm`        |
-| **Release** | `C:/MinGW64/bin/gcc.exe`      | `C:/MinGW64/bin/gcc.exe -O2 -fdiagnostics-color=always -I"include" src/*.c -o build/release/main.exe -L"lib/win32" -lraylib -lgdi32 -lwinmm`  |
+| **Debug**   | `C:/MinGW64/bin/gcc.exe`      | `C:/MinGW64/bin/gcc.exe -g -fdiagnostics-color=always -I"include" src/*.c -o build/debug/main.exe -L"lib/win64" -lraylib -lgdi32 -lwinmm`        |
+| **Release** | `C:/MinGW64/bin/gcc.exe`      | `C:/MinGW64/bin/gcc.exe -O2 -fdiagnostics-color=always -I"include" src/*.c -o build/release/main.exe -L"lib/win64" -lraylib -lgdi32 -lwinmm`  |
 
 #### 🔹 macOS (使用 Clang/GCC)
 
