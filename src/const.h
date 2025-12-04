@@ -6,7 +6,7 @@ typedef enum {
 	STATE_TETRIS,
 	STATE_SNAKE,
 	STATE_MINESWEEPER,
-	STATE_DASH
+	STATE_DODGE
 } menuState;
 
 #endif // CONST_H

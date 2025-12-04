@@ -4,22 +4,21 @@
 
 
 void menu(menuState *mainState) {
-	bool showMessageBox = false;
-	SetWindowSize(400, 200);
+	SetWindowSize(450, 300);
 	while (!WindowShouldClose() && *mainState == MAIN_MENU) {
 		BeginDrawing();
 		ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
-		if (GuiButton((Rectangle) { 24, 24, 120, 30 }, "#191#Show Message"))
-			showMessageBox = true;
 
-		if (showMessageBox) {
-			int result = GuiMessageBox((Rectangle) { 85, 70, 250, 100 },
-				"#191#Message Box", "Hi! This is a message!", "Nice;Cool");
+		if (GuiButton((Rectangle) { 24, 24, 120, 30 }, "#157#Tetris")) 
+			*mainState = STATE_TETRIS;
+		if (GuiButton((Rectangle) { 152, 24, 120, 30 }, "#157#Snake")) 
+			*mainState = STATE_SNAKE;
+		if (GuiButton((Rectangle) { 280, 24, 120, 30 }, "#157#Minesweeper")) 
+			*mainState = STATE_MINESWEEPER;
+		if (GuiButton((Rectangle) { 152, 64, 120, 30 }, "#157#Dodge")) 
+			*mainState = STATE_DODGE;
 
-			// printf("MessageBox result: %d\n", result);
-			if (result >= 0) showMessageBox = false;
-			if (result == 2) *mainState = STATE_TETRIS;
-		}
+		
 		EndDrawing();
 	}
 }

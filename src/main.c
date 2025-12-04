@@ -8,11 +8,11 @@
 
 #include "menu.h"
 #include "tetris.h"
-// #include "snake.h"
-// #include "mineSweeper.h"
+#include "snake.h"
+#include "mineSweeper.h"
+#include "dodge.h"
 
-int main()
-{
+int main() {
 	printf("raygui controls test suite\n");	
 	InitWindow(400, 200, "NCKU Raylib MiniGames");
 	SetTargetFPS(60);
@@ -28,13 +28,13 @@ int main()
 			tetris(&state);
 			break;
 		case STATE_SNAKE:
-			// TODO:
+			snake(&state);
 			break;
 		case STATE_MINESWEEPER:
-			// TODO:
+			minesweeper(&state);
 			break;
-		case STATE_DASH:
-			// TODO:
+		case STATE_DODGE:
+			dodge(&state);
 			break;
 		default:
 			state = MAIN_MENU;
