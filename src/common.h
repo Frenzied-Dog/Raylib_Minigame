@@ -1,5 +1,5 @@
-#ifndef CONST_H
-#define CONST_H
+#ifndef COMMON_H
+#define COMMON_H
 
 typedef enum {
 	MAIN_MENU,
@@ -9,4 +9,6 @@ typedef enum {
 	STATE_DODGE
 } menuState;
 
-#endif // CONST_H
+void fixWindowDPI(int baseWidth, int baseHeight);
+
+#endif // COMMON_H

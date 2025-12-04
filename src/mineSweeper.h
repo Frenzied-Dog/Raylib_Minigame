@@ -1,8 +1,8 @@
 #ifndef MINESWEEPER_H
 #define MINESWEEPER_H
 
-#include "const.h"
+#include "common.h"
 
-void minesweeper(menuState* state);
+void minesweeper(menuState* mainState);
 
 #endif // MINESWEEPER_H

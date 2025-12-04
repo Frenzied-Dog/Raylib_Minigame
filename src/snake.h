@@ -1,8 +1,8 @@
 #ifndef SNAKE_H
 #define SNAKE_H
 
-#include "const.h"
+#include "common.h"
 
-void snake(menuState* state);
+void snake(menuState* mainState);
 
 #endif // SNAKE_H

@@ -2,9 +2,9 @@
 #ifndef TETRIS_H
 #define TETRIS_H
 
-#include "const.h"
+#include "common.h"
 
-void tetris(menuState*);
+void tetris(menuState* mainState);
 
 
 #endif // TETRIS_H

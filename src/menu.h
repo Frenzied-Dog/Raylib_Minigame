@@ -1,7 +1,7 @@
 #ifndef MENU_H
 #define MENU_H
 
-#include "const.h"
+#include "common.h"
 
 void menu(menuState* state);
 

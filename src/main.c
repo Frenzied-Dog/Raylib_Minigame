@@ -4,7 +4,7 @@
 
 #include "raylib.h"
 #include "raygui.h"
-#include "const.h"
+#include "common.h"
 
 #include "menu.h"
 #include "tetris.h"
@@ -14,6 +14,7 @@
 
 int main() {
 	printf("raygui controls test suite\n");	
+	SetConfigFlags(FLAG_WINDOW_HIGHDPI);
 	InitWindow(400, 200, "NCKU Raylib MiniGames");
 	SetTargetFPS(60);
 

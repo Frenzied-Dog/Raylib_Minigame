@@ -2,14 +2,19 @@
 #include "raylib.h"
 #include "raygui.h"
 
-void snake(menuState* state) {
-	SetWindowSize(600, 400);
-	while (!WindowShouldClose() && *state == STATE_SNAKE) {
+int SNAKE_WIDTH = 600;
+int SNAKE_HEIGHT = 400;
+
+void snake(menuState* mainState) {
+	SetWindowSize(SNAKE_WIDTH, SNAKE_HEIGHT);
+	while (!WindowShouldClose() && *mainState == STATE_SNAKE) {
+		fixWindowDPI(SNAKE_WIDTH, SNAKE_HEIGHT);
+
 		BeginDrawing();
 		ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
 		GuiLabel((Rectangle){ 200, 180, 200, 40 }, "Snake Game Placeholder");
 		if (GuiButton((Rectangle) { 80, 80, 120, 30 }, "#191#Back to Menu")) 
-			*state = MAIN_MENU;
+			*mainState = MAIN_MENU;
 		EndDrawing();
 	}
 }

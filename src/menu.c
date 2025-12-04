@@ -2,10 +2,14 @@
 #include "raygui.h"
 #include "menu.h"
 
+int MENU_WIDTH = 450;
+int MENU_HEIGHT = 300;
 
 void menu(menuState *mainState) {
-	SetWindowSize(450, 300);
+	SetWindowSize(MENU_WIDTH, MENU_HEIGHT);
 	while (!WindowShouldClose() && *mainState == MAIN_MENU) {
+		fixWindowDPI(MENU_WIDTH, MENU_HEIGHT);
+
 		BeginDrawing();
 		ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
 

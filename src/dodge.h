@@ -1,8 +1,8 @@
 #ifndef DODGE_H
 #define DODGE_H
 
-#include "const.h"
+#include "common.h"
 
-void dodge(menuState* state);
+void dodge(menuState* mainState);
 
 #endif // DODGE_H
