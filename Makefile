@@ -6,11 +6,6 @@ INC_PATH  := include
 BIN_DIR   := build/debug
 REL_DIR   := build/release
 
-# raylib 庫路徑 (與 tasks.json 一致)
-LIB_PATH_WIN64  := lib/win64
-LIB_PATH_MAC    := lib/mac
-LIB_PATH_LINUX  := lib/linux
-
 # 預設為 Debug 構建
 BUILD_TYPE := debug
 
@@ -29,20 +24,20 @@ release_CFLAGS := -O2 -fdiagnostics-color=always -I"$(INC_PATH)"
 
 # 3.1 Windows (win64)
 win64_CC := C:/MinGW64/bin/gcc.exe
-win64_LIB_PATH := $(LIB_PATH_WIN64)
+win64_LIB_PATH := lib/win64
 win64_TARGET := main.exe
 win64_LIBS := -lraylib -lgdi32 -lwinmm
 
 # 3.2 macOS (mac)
 mac_CC := /usr/bin/clang
-mac_LIB_PATH := $(LIB_PATH_MAC)
+mac_LIB_PATH := lib/mac
 mac_TARGET := main_mac
 mac_LIBS := -lraylib -framework OpenGL -framework OpenAL -framework Cocoa -framework IOKit
 
 
 # 3.3 Linux (linux)
 linux_CC := /usr/bin/gcc
-linux_LIB_PATH := $(LIB_PATH_LINUX)
+linux_LIB_PATH := lib/linux
 linux_TARGET := main_linux
 linux_LIBS := -lraylib -lGL -lm -ldl -lrt -lpthread -lX11
 
@@ -76,6 +71,8 @@ TARGET_NAME := $($(PLATFORM)_TARGET)
 LIBS := $($(PLATFORM)_LIBS)
 CFLAGS := $($(BUILD_TYPE)_CFLAGS)
 OUT_DIR := $(if $(filter debug,$(BUILD_TYPE)), $(BIN_DIR), $(REL_DIR))
+MAKEDIR := $(if $(filter Windows_NT,$(OS)) ,cmd /C if not exist $(subst /,\,$(OUT_DIR)) mkdir $(subst /,\,$(OUT_DIR)), mkdir -p $(OUT_DIR))
+
 
 # ==============================================================================
 # 5. 主要目標 (Main Targets)
@@ -88,7 +85,7 @@ all: debug
 # 主要構建步驟
 $(OUT_DIR)/$(TARGET_NAME): $(SRC_FILES)
 	@echo "--- Building $(BUILD_TYPE) version for $(PLATFORM) using $(CC) ---"
-# 	@mkdir -p $(OUT_DIR)
+	@$(MAKEDIR)
     # 編譯指令: [Compiler] [Flags] [Source Files] -o [Output] -L[Lib Path] [Libs]
 	$(CC) $(CFLAGS) $(SRC_FILES) -o $@ -L"$(LIB_DIR)" $(LIBS)
 
