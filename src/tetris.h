@@ -9,21 +9,22 @@
 void tetris(menuState* mainState);
 
 typedef enum {
-	PIECE_I = 0,
+	PIECE_NONE = -1,
+	PIECE_I,
 	PIECE_O,
 	PIECE_T,
 	PIECE_S,
 	PIECE_Z,
 	PIECE_J,
-	PIECE_L,
-	PIECE_NONE
+	PIECE_L
 } PieceType;
 
 typedef struct {
 	PieceType type;
 	int rotation;   // 0~3
 	int x;          // 在 board 上的 x (0 ~ TETRIS_BOARD_W-1)
-	int y;          // 在 board 上的 y (可以 <0 表示還在畫面上方)
+	double y;          // 在 board 上的 y (可以 <0 表示還在畫面上方)
+	bool onGround;   // 是否已著地
 } Piece;
 
 typedef struct {
@@ -40,19 +41,5 @@ typedef enum {
 	PLAYING,
 	GAMEOVER
 } TetrisState;
-
-static void Tetris_Init();
-static TetrisInput Tetris_GetInput();
-static void Tetris_Update(TetrisInput input);
-static void Draw_UI();
-static void Draw_Board();
-static void Draw_PauseScreen();
-static PieceType random_piece(void);
-static void spawn_piece();
-static bool check_collision(const Piece* p);
-static void lock_piece();
-static int clear_lines();
-static void update_level_and_speed();
-
 
 #endif // TETRIS_H
