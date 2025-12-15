@@ -4,7 +4,7 @@
 #include "common.h"
 
 #define TETRIS_BOARD_W 10
-#define TETRIS_BOARD_H 20
+#define TETRIS_BOARD_H 22
 
 void tetris(menuState* mainState);
 
@@ -22,13 +22,14 @@ typedef enum {
 typedef struct {
 	PieceType type;
 	int rotation;   // 0~3
-	int x;          // 在 board 上的 x (0 ~ TETRIS_BOARD_W-1)
-	double y;          // 在 board 上的 y (可以 <0 表示還在畫面上方)
+	int x;          // 在 board 上的 x
+	double y;          // 在 board 上的 y
 	bool onGround;   // 是否已著地
 } Piece;
 
 typedef struct {
-	int move;           // -1: 左移一次, 1: 右移一次, 0: 不動
+	bool left;
+	bool right;
 	bool softDrop;      // true: 一格一格快速下落
 	bool hardDrop;      // true: 直接到底
 	bool rotateCW;      // 順時針旋轉

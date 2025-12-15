@@ -5,7 +5,7 @@
 #include <time.h>   /* 時間相關函數 */
 
 static int WINDOW_WIDTH = 850;
-static int WINDOW_HEIGHT = 600;
+static int WINDOW_HEIGHT = 650;
 static Rectangle leftCol, boardPanel, rightCol;
 static TetrisState state = MENU;
 static int aniState = 0; // TODO: animation state
@@ -14,63 +14,63 @@ static int board[TETRIS_BOARD_H][TETRIS_BOARD_W]; // 0=空，其它代表方塊�
 static Piece current = {PIECE_NONE, 0, 0, 0.0, false};
 static PieceType holdType = PIECE_NONE;
 static bool holdLocked = false; // 本次落下是否已使用 hold
-static PieceType bag[14]; // 7-bag 系統
-static int bagIndex = 0;
-static int score = 0;
-static int level = 1;
 static bool gameOver = false;
 static bool pause = false;
+static int score = 0;
+static int level = 1;
+static int bagIndex = 0;
+static PieceType bag[14]; // 7-bag 系統
 
 static const double G[] = { 60.0, 47.6, 37.1, 28.4, 21.3, 15.7, 11.4, 8.1, 5.6, 3.8, 2.6, 1.7, 1.1, 0.7 }; // 等級對應重力 (幀/格)
 static const Vector2 SHAPES[7][4][4] = {
     // PIECE_I
     {
         { { -1, 0 }, { 0, 0 }, { 1, 0 }, { 2, 0 } },  // rot 0  ----
-        { { 1, -1 }, { 1, 0 }, { 1, 1 }, { 1, 2 } },  // rot 1  
-        { { -1, 1 }, { 0, 1 }, { 1, 1 }, { 2, 1 } },  // rot 2
-        { { 0, -1 }, { 0, 0 }, { 0, 1 }, { 0, 2 } },  // rot 3
+        { { 1, 1 }, { 1, 0 }, { 1, -1 }, { 1, -2 } },  // rot 1  
+        { { -1, -1 }, { 0, -1 }, { 1, -1 }, { 2, -1 } },  // rot 2
+        { { 0, 1 }, { 0, 0 }, { 0, -1 }, { 0, -2 } },  // rot 3
     },
     // PIECE_O
     {
-        { { 0, 0 }, { 1, 0 }, { 0, 1 }, { 1, 1 } },
-        { { 0, 0 }, { 1, 0 }, { 0, 1 }, { 1, 1 } },
-        { { 0, 0 }, { 1, 0 }, { 0, 1 }, { 1, 1 } },
-        { { 0, 0 }, { 1, 0 }, { 0, 1 }, { 1, 1 } },
+        { { 0, 0 }, { 1, 0 }, { 0, -1 }, { 1, -1 } },
+        { { 0, 0 }, { 1, 0 }, { 0, -1 }, { 1, -1 } },
+        { { 0, 0 }, { 1, 0 }, { 0, -1 }, { 1, -1 } },
+        { { 0, 0 }, { 1, 0 }, { 0, -1 }, { 1, -1 } },
     },
     // PIECE_T
     {
-        { { -1, 0 }, { 0, 0 }, { 1, 0 }, { 0, 1 } },
-        { { 0, -1 }, { 0, 0 }, { 0, 1 }, { 1, 0 } },
         { { -1, 0 }, { 0, 0 }, { 1, 0 }, { 0, -1 } },
-        { { 0, -1 }, { 0, 0 }, { 0, 1 }, { -1, 0 } },
+        { { 0, 1 }, { 0, 0 }, { 0, -1 }, { 1, 0 } },
+        { { -1, 0 }, { 0, 0 }, { 1, 0 }, { 0, 1 } },
+        { { 0, 1 }, { 0, 0 }, { 0, -1 }, { -1, 0 } },
     },
     // PIECE_S
-    {
-        { { 0, 0 }, { 1, 0 }, { -1, 1 }, { 0, 1 } },
-        { { 0, -1 }, { 0, 0 }, { 1, 0 }, { 1, 1 } },
-        { { 0, 0 }, { 1, 0 }, { -1, 1 }, { 0, 1 } },
-        { { 0, -1 }, { 0, 0 }, { 1, 0 }, { 1, 1 } },
+     {
+        { { -1, 0 }, { 0, 0 }, { 0, -1 }, { 1, -1 } },
+        { { 1, 1 }, { 0, 0 }, { 1, 0 }, { 0, -1 } },
+        { { -1, 0 }, { 0, 0 }, { 0, -1 }, { 1, -1 } },
+        { { 1, 1 }, { 0, 0 }, { 1, 0 }, { 0, -1 } },
     },
     // PIECE_Z
     {
-        { { -1, 0 }, { 0, 0 }, { 0, 1 }, { 1, 1 } },
-        { { 1, -1 }, { 0, 0 }, { 1, 0 }, { 0, 1 } },
-        { { -1, 0 }, { 0, 0 }, { 0, 1 }, { 1, 1 } },
-        { { 1, -1 }, { 0, 0 }, { 1, 0 }, { 0, 1 } },
+        { { 0, 0 }, { 1, 0 }, { -1, -1 }, { 0, -1 } },
+        { { 0, 1 }, { 0, 0 }, { 1, 0 }, { 1, -1 } },
+        { { 0, 0 }, { 1, 0 }, { -1, -1 }, { 0, -1 } },
+        { { 0, 1 }, { 0, 0 }, { 1, 0 }, { 1, -1 } },
     },
     // PIECE_J
     {
-        { { -1, 0 }, { 0, 0 }, { 1, 0 }, { -1, 1 } },
-        { { 0, -1 }, { 0, 0 }, { 0, 1 }, { 1, -1 } },
-        { { -1, 0 }, { 0, 0 }, { 1, 0 }, { 1, -1 } },
-        { { 0, -1 }, { 0, 0 }, { 0, 1 }, { -1, 1 } },
+        { { -1, 0 }, { 0, 0 }, { 1, 0 }, { -1, -1 } },
+        { { 0, 1 }, { 0, 0 }, { 0, -1 }, { 1, 1 } },
+        { { -1, 0 }, { 0, 0 }, { 1, 0 }, { 1, 1 } },
+        { { 0, 1 }, { 0, 0 }, { 0, -1 }, { -1, -1 } },
     },
     // PIECE_L
     {
-        { { -1, 0 }, { 0, 0 }, { 1, 0 }, { 1, 1 } },
-        { { 0, -1 }, { 0, 0 }, { 0, 1 }, { 1, 1 } },
-        { { -1, -1 }, { -1, 0 }, { 0, 0 }, { 1, 0 } },
-        { { -1, -1 }, { 0, -1 }, { 0, 0 }, { 0, 1 } },
+        { { -1, 0 }, { 0, 0 }, { 1, 0 }, { 1, -1 } },
+        { { 0, 1 }, { 0, 0 }, { 0, -1 }, { 1, -1 } },
+        { { -1, 1 }, { -1, 0 }, { 0, 0 }, { 1, 0 } },
+        { { -1, -1 }, { 0, 1 }, { 0, 0 }, { 0, -1 } },
     },
 };
 static const Color pieceColors[7] = { SKYBLUE, GOLD, PURPLE, LIME, RED, BLUE, ORANGE };
@@ -113,13 +113,13 @@ void tetris(menuState *mainState) {
             Draw_Board();
             Draw_UI();
 
-            // if (!gameOver) {
-            //     if (!pause) Tetris_Update(Tetris_GetInput());
-            //     else Draw_PauseScreen();
-            // } else {
-            //     // TODO: Animation
-            //     state = GAMEOVER;
-            // }
+            if (!gameOver) {
+                if (!pause) Tetris_Update(Tetris_GetInput());
+                else Draw_PauseScreen();
+            } else {
+                // TODO: Animation
+                state = GAMEOVER;
+            }
             break;
         case GAMEOVER:
             Draw_Board();
@@ -141,8 +141,12 @@ static void Tetris_Init() {
     level = 1;
     gameOver = false;
     pause = false;
+    holdLocked = false;
+    holdType = PIECE_NONE;
+    bagIndex = 0;
     random_piece(false);
     random_piece(true);
+    current = (Piece){ bag[bagIndex], 0, 4, 1.0, false };
     for (int y = 0; y < TETRIS_BOARD_H; ++y) {
         for (int x = 0; x < TETRIS_BOARD_W; ++x) {
             board[y][x] = 0;
@@ -152,38 +156,46 @@ static void Tetris_Init() {
 
 static TetrisInput Tetris_GetInput() {
     TetrisInput input = {0};
-    // TODO:
-    // for DAS: IsKeyDown
+    // for DAS or other can hold: IsKeyDown
     // else IsKeyPressed
 
-    // if (IsKeyPressed(KEY_LEFT)) {
-    //     input.move = -1;
-    // } else if (IsKeyPressed(KEY_RIGHT)) {
-    //     input.move = 1;
-    // }
+    //TODO: change to DAS
+    if (IsKeyPressed(KEY_LEFT)) {
+        input.left = true;
+    }
+    
+    if (IsKeyPressed(KEY_RIGHT)) {
+        input.right = true;
+    }
 
-    // if (IsKeyPressed(KEY_SPACE)) {
-    //     input.hardDrop = true;
-    // } else if (IsKeyPressed(KEY_DOWN)) {
-    //     input.softDrop = true;
-    // }
+    if (IsKeyPressed(KEY_SPACE)) {
+        input.hardDrop = true;
+    } else if (IsKeyDown(KEY_DOWN)) {
+        input.softDrop = true;
+    }
 
+    if (IsKeyPressed(KEY_X) || IsKeyPressed(KEY_UP)) {
+        input.rotateCW = true;
+    } else if (IsKeyPressed(KEY_Z)) {
+        input.rotateCCW = true;
+    }
 
+    if (IsKeyPressed(KEY_C)) {
+        input.hold = true;
+    }
     return input;
 }
 
 static void Tetris_Update(TetrisInput input) {
     static int frame = 0;
     static int DAS_counter = 0;
-
+    
     
 
 }
 
 
-static PieceType get_next_piece() {
-
-}
+static PieceType get_next_piece() {}
 
 static void random_piece(bool forSecondBag) {
     int index = forSecondBag ? 7 : 0;
@@ -200,13 +212,11 @@ static void random_piece(bool forSecondBag) {
     }
 }
 
-
 static bool check_collision(const Piece* p) {}
 
 static void lock_piece() {}
 
 static int clear_lines() {}
-
 
 static void DrawPiecePreview(PieceType type, Rectangle box) {
     DrawRectangleLinesEx(box, 1, Fade(WHITE, 0.5f));
@@ -224,14 +234,14 @@ static void DrawPiecePreview(PieceType type, Rectangle box) {
         break;
     case PIECE_O:
         centerX -= cell * 0.5f;
-        centerY -= cell * 0.5f;
+        centerY += cell * 0.5f;
         break;
     case PIECE_T:
     case PIECE_S:
     case PIECE_Z:
     case PIECE_J:
     case PIECE_L:
-        centerY -= cell * 0.5f;
+        centerY += cell * 0.5f;
         break;
     default:
         break;
@@ -252,7 +262,7 @@ static void Draw_UI() {
 
     // ---------------- Left column ----------------
 
-    Rectangle holdPanel = (Rectangle){ leftCol.x, leftCol.y, leftCol.width, 150 };
+    Rectangle holdPanel = (Rectangle){ leftCol.x, leftCol.y, leftCol.width, 130 };
     Rectangle controlPanel = (Rectangle){ leftCol.x, leftCol.y + leftCol.height - 230, leftCol.width, 230 };
 
     GuiGroupBox(holdPanel, "Hold");
@@ -261,9 +271,9 @@ static void Draw_UI() {
 
         Rectangle holdBox = (Rectangle){
             holdPanel.x + PAD,
-            holdPanel.y + 28,
+            holdPanel.y + 15,
             holdPanel.width - 2 * PAD,
-            holdPanel.height - 38
+            holdPanel.height - 15 - PAD
         };
         DrawPiecePreview(holdType, holdBox);
     }
@@ -314,9 +324,9 @@ static void Draw_UI() {
         Rectangle box3 = (Rectangle){ px + pw * 0.1, py + box1.height + box2.height, pw * 0.8, ph * 0.8 };
         // Rectangle smallBox2 = (Rectangle){ px + bigW + innerGap + smallW + innerGap, py, smallW, ph };
 
-        DrawPiecePreview(bag[bagIndex % 14], box1);
-        DrawPiecePreview(bag[(bagIndex + 1) % 14], box2);
-        DrawPiecePreview(bag[(bagIndex + 2) % 14], box3);
+        DrawPiecePreview(bag[(bagIndex + 1) % 14], box1);
+        DrawPiecePreview(bag[(bagIndex + 2) % 14], box2);
+        DrawPiecePreview(bag[(bagIndex + 3) % 14], box3);
     }
 
     GuiGroupBox(scorePanel, "Score");
@@ -347,8 +357,8 @@ static void Draw_UI() {
         pause = !pause;
     }
 
-    // 目前你的主迴圈暫停繪製被註解掉了；先在這裡直接疊上去，確保按齒輪會看到暫停畫面
-    if (pause) Draw_PauseScreen();
+    // // 目前你的主迴圈暫停繪製被註解掉了；先在這裡直接疊上去，確保按齒輪會看到暫停畫面
+    // if (pause) Draw_PauseScreen();
 }
 
 static void Draw_Board() {
@@ -367,8 +377,11 @@ static void Draw_Board() {
     Color line = GetColor(GuiGetStyle(DEFAULT, LINE_COLOR));
 
     // 格子區外框
-    DrawRectangleLinesEx((Rectangle){ox, oy, gridW, gridH}, 1.2, line);
-
+    DrawRectangleLinesEx((Rectangle){ox, oy, gridW, gridH}, 0.8, line);
+    DrawLineEx((Vector2) { ox, oy + cell * 2 }, (Vector2) { ox, oy + gridH }, 1.5, line);
+    DrawLineEx((Vector2) { ox + gridW, oy + cell * 2 }, (Vector2) { ox + gridW, oy + gridH }, 1.5, line);
+    DrawLineEx((Vector2) { ox, oy + gridH }, (Vector2) { ox + gridW, oy + gridH }, 1.5, line);
+    
     // 已鎖定在盤面的方塊（board[y][x]：0=空，其它=種類）
     for (int y = 0; y < TETRIS_BOARD_H; ++y) {
         for (int x = 0; x < TETRIS_BOARD_W; ++x) {
@@ -398,8 +411,8 @@ static void Draw_Board() {
 
             int px = ox + bx * cell;
             int py = oy + by * cell;
-            DrawRectangle(px, py, cell - 1, cell - 1, pieceColors[current.type]);
-            DrawRectangleLines(px, py, cell - 1, cell - 1, Fade(BLACK, 0.6f));
+            DrawRectangle(px, py, cell, cell, pieceColors[current.type]);
+            DrawRectangleLinesEx((Rectangle){ px, py, cell+1, cell+1}, 0.8, Fade(BLACK, 0.6f));
         }
     }
 
