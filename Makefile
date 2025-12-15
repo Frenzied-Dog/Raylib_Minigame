@@ -70,7 +70,7 @@ LIB_DIR := $($(PLATFORM)_LIB_PATH)
 TARGET_NAME := $($(PLATFORM)_TARGET)
 LIBS := $($(PLATFORM)_LIBS)
 CFLAGS := $($(BUILD_TYPE)_CFLAGS)
-OUT_DIR := $(if $(filter debug,$(BUILD_TYPE)), $(BIN_DIR), $(REL_DIR))
+OUT_DIR := $(if $(filter debug,$(BUILD_TYPE)),$(BIN_DIR),$(REL_DIR))
 MAKEDIR := $(if $(filter Windows_NT,$(OS)) ,cmd /C if not exist $(subst /,\,$(OUT_DIR)) mkdir $(subst /,\,$(OUT_DIR)), mkdir -p $(OUT_DIR))
 
 
