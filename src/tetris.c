@@ -201,21 +201,15 @@ static void random_piece(bool forSecondBag) {
 }
 
 
-static bool check_collision(const Piece* p) {
+static bool check_collision(const Piece* p) {}
 
-}
+static void lock_piece() {}
 
-static void lock_piece() {
-
-}
-
-static int clear_lines() {
-
-}
+static int clear_lines() {}
 
 
 static void DrawPiecePreview(PieceType type, Rectangle box) {
-    DrawRectangleLinesEx(box, 1, Fade(WHITE, 0.8f));
+    DrawRectangleLinesEx(box, 1, Fade(WHITE, 0.5f));
     if (type == PIECE_NONE) {
         GuiDrawIcon(113, (int)(box.x + box.width / 2 - 16), (int)(box.y + box.height / 2 - 16), 2, GetColor(GuiGetStyle(DEFAULT, TEXT_COLOR_NORMAL)));
         return;
@@ -269,10 +263,16 @@ static void Draw_UI() {
         DrawText("Left/Right:     /", x, y + 0 * lh, fs, text);
         GuiDrawIcon(118, x + 135, y + 0 * lh + 2, 1, text);
         GuiDrawIcon(119, x + 175, y + 0 * lh + 2, 1, text);
-        DrawText("Down:  soft drop", x, y + 1 * lh, fs, text);
+
+        DrawText("Down:   soft drop", x, y + 1 * lh, fs, text);
+        
         DrawText("Z:", x, y + 2 * lh, fs, text);
+        GuiDrawIcon(72, x + 85, y + 2 * lh - 8, 2, text);
+        
         DrawText("X/Up:", x, y + 3 * lh, fs, text);
-        DrawText("C:", x, y + 4 * lh, fs, text);
+        GuiDrawIcon(73, x + 85, y + 3 * lh - 6, 2, text);
+        
+        DrawText("C:        hold", x, y + 4 * lh, fs, text);
         DrawText("Space:  hard drop", x, y + 5 * lh, fs, text);
     }
 
@@ -280,33 +280,26 @@ static void Draw_UI() {
     DrawRectangleLinesEx(boardPanel, 2, GetColor(GuiGetStyle(DEFAULT, LINE_COLOR)));
 
     // ---------------- Right column ----------------
-    Rectangle nextPanel = (Rectangle){ rightCol.x, rightCol.y, rightCol.width, 160 };
+    Rectangle nextPanel = (Rectangle){ rightCol.x, rightCol.y, rightCol.width, 235 };
     Rectangle scorePanel = (Rectangle){ rightCol.x, nextPanel.y + nextPanel.height + GAP, rightCol.width, 110 };
     Rectangle levelPanel = (Rectangle){ rightCol.x, scorePanel.y + scorePanel.height + GAP, rightCol.width, 110 };
 
     GuiGroupBox(nextPanel, "Next");
     {
         float px = nextPanel.x + PAD;
-        float py = nextPanel.y + 30;
+        float py = nextPanel.y + 15;
         float pw = nextPanel.width - 2 * PAD;
-        float ph = nextPanel.height - 40;
+        float ph = 80.0f;
         float innerGap = 10.0f;
 
-        // 3 個預覽：第一個（下一個）較大
-        float bigW = pw * 0.46f;
-        float smallW = (pw - bigW - 2.0f * innerGap) * 0.5f;
+        Rectangle box1 = (Rectangle){ px, py, pw, ph };
+        Rectangle box2 = (Rectangle){ px + pw * 0.1, py + box1.height, pw * 0.8, ph * 0.8 };
+        Rectangle box3 = (Rectangle){ px + pw * 0.1, py + box1.height + box2.height, pw * 0.8, ph * 0.8 };
+        // Rectangle smallBox2 = (Rectangle){ px + bigW + innerGap + smallW + innerGap, py, smallW, ph };
 
-        Rectangle bigBox = (Rectangle){ px, py, bigW, ph };
-        Rectangle smallBox1 = (Rectangle){ px + bigW + innerGap, py, smallW, ph };
-        Rectangle smallBox2 = (Rectangle){ px + bigW + innerGap + smallW + innerGap, py, smallW, ph };
-
-        PieceType t0 = (bagIndex + 0 < 14) ? bag[bagIndex + 0] : PIECE_NONE;
-        PieceType t1 = (bagIndex + 1 < 14) ? bag[bagIndex + 1] : PIECE_NONE;
-        PieceType t2 = (bagIndex + 2 < 14) ? bag[bagIndex + 2] : PIECE_NONE;
-
-        DrawPiecePreview(t0, bigBox);
-        DrawPiecePreview(t1, smallBox1);
-        DrawPiecePreview(t2, smallBox2);
+        DrawPiecePreview(bag[bagIndex % 14], box1);
+        DrawPiecePreview(bag[(bagIndex + 1) % 14], box2);
+        DrawPiecePreview(bag[(bagIndex + 2) % 14], box3);
     }
 
     GuiGroupBox(scorePanel, "Score");
@@ -419,9 +412,9 @@ static void Draw_PauseScreen() {
 
     float bx = panel.x + 40;
     float bw = panel.width - 80;
-    float by = panel.y + 70;
+    float by = panel.y + 55;
     float bh = 36;
-    float sp = 14;
+    float sp = 22;
 
     if (GuiButton((Rectangle) { bx, by + 0 * (bh + sp), bw, bh }, "Continue")) {
         pause = false;
