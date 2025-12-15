@@ -210,22 +210,39 @@ static int clear_lines() {}
 
 static void DrawPiecePreview(PieceType type, Rectangle box) {
     DrawRectangleLinesEx(box, 1, Fade(WHITE, 0.5f));
-    if (type == PIECE_NONE) {
-        GuiDrawIcon(113, (int)(box.x + box.width / 2 - 16), (int)(box.y + box.height / 2 - 16), 2, GetColor(GuiGetStyle(DEFAULT, TEXT_COLOR_NORMAL)));
-        return;
-    }
-
-    float cell = ((box.width < box.height ? box.width : box.height) - 8.0f) / 4.0f;
+    float cell = ((box.width < box.height ? box.width : box.height) - 20.0f) / 2.0f;
     float centerX = box.x + box.width * 0.5f;
     float centerY = box.y + box.height * 0.5f;
+
+    // 特殊調整各種方塊的預覽位置
+    switch (type) {
+    case PIECE_NONE:
+        GuiDrawIcon(113, (int)(box.x + box.width / 2 - 16), (int)(box.y + box.height / 2 - 16), 2, GetColor(GuiGetStyle(DEFAULT, TEXT_COLOR_NORMAL)));
+        return;
+    case PIECE_I:
+        centerX -= cell * 0.5f;
+        break;
+    case PIECE_O:
+        centerX -= cell * 0.5f;
+        centerY -= cell * 0.5f;
+        break;
+    case PIECE_T:
+    case PIECE_S:
+    case PIECE_Z:
+    case PIECE_J:
+    case PIECE_L:
+        centerY -= cell * 0.5f;
+        break;
+    default:
+        break;
+    }
+
     for (int i = 0; i < 4; ++i) {
-        float px = centerX + SHAPES[type][0][i].x * cell - cell * 0.5f;
-        float py = centerY + SHAPES[type][0][i].y * cell - cell * 0.5f;
-        int size = (int)(cell - 2);
-        int ix = (int)px;
-        int iy = (int)py;
-        DrawRectangle(ix, iy, size, size, pieceColors[type]);
-        DrawRectangleLines(ix, iy, size, size, BLACK);
+        int px = centerX + SHAPES[type][0][i].x * cell - cell * 0.5f;
+        int py = centerY + SHAPES[type][0][i].y * cell - cell * 0.5f;
+        int size = (int)(cell);
+        DrawRectangle(px, py, size, size, pieceColors[type]);
+        DrawRectangleLinesEx((Rectangle){px, py, size+1, size+1}, 1, BLACK);
     }
 }
 
