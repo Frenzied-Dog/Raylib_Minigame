@@ -17,6 +17,7 @@ int main() {
 	SetConfigFlags(FLAG_WINDOW_HIGHDPI);
 	InitWindow(400, 200, "NCKU Raylib MiniGames");
 	SetTargetFPS(60);
+	SetWindowIcon(LoadImage("Raylib_logo.png"));
 
 	menuState state = MAIN_MENU;
 	while (!WindowShouldClose()) {
