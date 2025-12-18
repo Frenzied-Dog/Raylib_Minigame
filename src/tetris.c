@@ -14,6 +14,8 @@ static int board[TETRIS_BOARD_H][TETRIS_BOARD_W]; // 0=空，其它代表方塊�
 static Piece current = {PIECE_NONE, 0, 0, 0.0, false};
 static PieceType holdType = PIECE_NONE;
 static bool holdLocked = false; // 本次落下是否已使用 hold
+static int lockDelay = LOCK_DELAY_FRAMES;
+static int lockResetCount = LOCK_RESET_MAX;
 static bool gameOver = false;
 static bool pause = false;
 static int score = 0;
@@ -21,14 +23,14 @@ static int level = 1;
 static int bagIndex = 0;
 static PieceType bag[14]; // 7-bag 系統
 
-static const double G[] = { 60.0, 47.6, 37.1, 28.4, 21.3, 15.7, 11.4, 8.1, 5.6, 3.8, 2.6, 1.7, 1.1, 0.7 }; // 等級對應重力 (幀/格)
+static const double G[] = { 0.01667, 0.021017, 0.026977, 0.035256, 0.04693, 0.06361, 0.0879, 0.1236, 0.1775, 0.2598, 0.388, 0.59, 0.92, 1.46, 2.36 }; // 等級對應重力 (幀/格)
 static const Vector2 SHAPES[7][4][4] = {
     // PIECE_I
     {
         { { -1, 0 }, { 0, 0 }, { 1, 0 }, { 2, 0 } },  // rot 0  ----
-        { { 1, 1 }, { 1, 0 }, { 1, -1 }, { 1, -2 } },  // rot 1  
-        { { -1, -1 }, { 0, -1 }, { 1, -1 }, { 2, -1 } },  // rot 2
-        { { 0, 1 }, { 0, 0 }, { 0, -1 }, { 0, -2 } },  // rot 3
+        { { 1, -1 }, { 1, 0 }, { 1, 1 }, { 1, 2 } },  // rot 1
+        { { -1, 1 }, { 0, 1 }, { 1, 1 }, { 2, 1 } },  // rot 2
+        { { 0, -1 }, { 0, 0 }, { 0, 1 }, { 0, 2 } },  // rot 3  
     },
     // PIECE_O
     {
@@ -40,52 +42,65 @@ static const Vector2 SHAPES[7][4][4] = {
     // PIECE_T
     {
         { { -1, 0 }, { 0, 0 }, { 1, 0 }, { 0, -1 } },
-        { { 0, 1 }, { 0, 0 }, { 0, -1 }, { 1, 0 } },
-        { { -1, 0 }, { 0, 0 }, { 1, 0 }, { 0, 1 } },
+        { { 0, -1 }, { 0, 0 }, { 0, 1 }, { 1, 0 } },
+        { { 1, 0 }, { 0, 0 }, { -1, 0 }, { 0, 1 } },
         { { 0, 1 }, { 0, 0 }, { 0, -1 }, { -1, 0 } },
     },
     // PIECE_S
      {
         { { -1, 0 }, { 0, 0 }, { 0, -1 }, { 1, -1 } },
-        { { 1, 1 }, { 0, 0 }, { 1, 0 }, { 0, -1 } },
-        { { -1, 0 }, { 0, 0 }, { 0, -1 }, { 1, -1 } },
-        { { 1, 1 }, { 0, 0 }, { 1, 0 }, { 0, -1 } },
+        { { 0, -1 }, { 0, 0 }, { 1, 0 }, { 1, 1 } },
+        { { 1, 0 }, { 0, 0 }, { 0, 1 }, { -1, 1 } },
+        { { 0, 1 }, { 0, 0 }, { -1, 0 }, { -1, -1 } },
     },
     // PIECE_Z
     {
-        { { 0, 0 }, { 1, 0 }, { -1, -1 }, { 0, -1 } },
-        { { 0, 1 }, { 0, 0 }, { 1, 0 }, { 1, -1 } },
-        { { 0, 0 }, { 1, 0 }, { -1, -1 }, { 0, -1 } },
-        { { 0, 1 }, { 0, 0 }, { 1, 0 }, { 1, -1 } },
+        { { -1, -1 }, { 0, -1 }, { 0, 0 }, { 1, 0 } },
+        { { 1, -1 }, { 1, 0 }, { 0, 0 }, { 0, 1 } },
+        { { 1, 1 }, { 0, 1 }, { 0, 0 }, { -1, 0 } },
+        { { -1, 1 }, { -1, 0 }, { 0, 0 }, { 0, -1 } },
     },
     // PIECE_J
     {
-        { { -1, 0 }, { 0, 0 }, { 1, 0 }, { -1, -1 } },
-        { { 0, 1 }, { 0, 0 }, { 0, -1 }, { 1, 1 } },
-        { { -1, 0 }, { 0, 0 }, { 1, 0 }, { 1, 1 } },
-        { { 0, 1 }, { 0, 0 }, { 0, -1 }, { -1, -1 } },
+        { { -1, -1 }, { -1, 0 }, { 0, 0 }, { 1, 0 } },
+        { { 1, -1 }, { 0, -1 }, { 0, 0 }, { 0, 1 } },
+        { { 1, 1 }, { 1, 0 }, { 0, 0 }, { -1, 0 } },
+        { { -1, 1 }, { 0, 1 }, { 0, 0 }, { 0, -1 } },
     },
     // PIECE_L
     {
         { { -1, 0 }, { 0, 0 }, { 1, 0 }, { 1, -1 } },
-        { { 0, 1 }, { 0, 0 }, { 0, -1 }, { 1, -1 } },
-        { { -1, 1 }, { -1, 0 }, { 0, 0 }, { 1, 0 } },
-        { { -1, -1 }, { 0, 1 }, { 0, 0 }, { 0, -1 } },
+        { { 0, -1 }, { 0, 0 }, { 0, 1 }, { 1, 1 } },
+        { { 1, 0 }, { 0, 0 }, { -1, 0 }, { -1, 1 } },
+        { { 0, 1 }, { 0, 0 }, { 0, -1 }, { -1, -1 } },
     },
 };
-static const Color pieceColors[7] = { SKYBLUE, GOLD, PURPLE, LIME, RED, BLUE, ORANGE };
+
+// 中低彩度（比 raylib 預設柔和，但不會太灰）
+static const Color pieceColors[7] = {
+    (Color){ 90, 170, 210, 255}, // soft cyan/sky
+    (Color){235, 200,  80, 255}, // soft gold
+    (Color){175, 105, 200, 255}, // soft purple
+    (Color){ 95, 195, 110, 255}, // soft green
+    (Color){220,  95,  95, 255}, // soft red
+    (Color){ 85, 115, 220, 255}, // soft blue
+    (Color){235, 155,  75, 255}, // soft orange
+};
 
 static void Tetris_Init();
 static TetrisInput Tetris_GetInput();
 static void Tetris_Update(TetrisInput input);
+static void random_piece(bool forSecondBag);
+static bool check_collision(const Piece* p);
+static Piece rotate_piece(Piece rp, bool clockwise);
+static void reset_lock_delay();
+static void lock_piece();
+static int clear_lines();
+static void update_score(int linesCleared);
+static void spawn_piece();
 static void Draw_UI();
 static void Draw_Board();
 static void Draw_PauseScreen();
-static PieceType get_next_piece();
-static void random_piece(bool forSecondBag);
-static bool check_collision(const Piece* p);
-static void lock_piece();
-static int clear_lines();
 static void DrawPiecePreview(PieceType type, Rectangle box);
 static void UI_SetLayout();
 
@@ -124,6 +139,7 @@ void tetris(menuState *mainState) {
         case GAMEOVER:
             Draw_Board();
             Draw_UI();
+            DrawText("Game Over", WINDOW_WIDTH / 2 - 100, WINDOW_HEIGHT / 2 - 20, 40, RED);
             // TODO: Game Over Screen
             break;
         }
@@ -160,11 +176,11 @@ static TetrisInput Tetris_GetInput() {
     // else IsKeyPressed
 
     //TODO: change to DAS
-    if (IsKeyPressed(KEY_LEFT)) {
+    if (IsKeyDown(KEY_LEFT)) {
         input.left = true;
     }
     
-    if (IsKeyPressed(KEY_RIGHT)) {
+    if (IsKeyDown(KEY_RIGHT)) {
         input.right = true;
     }
 
@@ -188,14 +204,208 @@ static TetrisInput Tetris_GetInput() {
 
 static void Tetris_Update(TetrisInput input) {
     static int frame = 0;
-    static int DAS_counter = 0;
-    
-    
+    static double gravity = G[0];
+    static int DAS_counter_L = 0;
+    static int DAS_counter_R = 0;
+    static const int DAS_DELAY = 10; // frames before auto-shift starts
+    static int ARR = 2; // frames between auto-shifts
+    static int SOFT_interval = 2; // frames between soft drop moves
+    static int DCD = 5; // frames between DAS moves during delayed auto-shift (DAS Cancel Delay)
 
+    gravity = G[level - 1];
+    frame = (frame + 1) % 60;
+
+    // hold
+    if (input.hold && !holdLocked) {
+        PieceType temp = holdType;
+        holdType = current.type;
+        if (temp == PIECE_NONE) {
+            spawn_piece();
+        } else {
+            current = (Piece){ temp, 0, 4, 1.0, false };
+            lockDelay = LOCK_DELAY_FRAMES;
+            lockResetCount = LOCK_RESET_MAX;
+        }
+        holdLocked = true;
+        return;
+    }
+
+    // left/right movement with DAS
+    // FIXME: 左右問題
+    static bool lastLeft = false, lastRight = false;
+    if (input.left || input.right) {
+        DAS_counter_L++;
+        if (DAS_counter_L == 1 || (DAS_counter_L > DAS_DELAY && (DAS_counter_L - DAS_DELAY) % ARR == 0)) {
+            Piece moved = current;
+            if (input.left) moved.x -= 1;
+            else if (input.right) moved.x += 1;
+
+            if (!check_collision(&moved)) {
+                current = moved;
+                reset_lock_delay();
+            }
+        }
+    } else {
+        DAS_counter_L = 0;
+    }
+    lastLeft = input.left;
+    lastRight = input.right;
+
+    // rotation
+    if (input.rotateCW) {
+        current = rotate_piece(current, true);
+        reset_lock_delay();
+    } else if (input.rotateCCW) {
+        current = rotate_piece(current, false);
+        reset_lock_delay();
+    }
+
+    // hard drop
+    if (input.hardDrop) {
+        while (true) {
+            Piece dropped = current;
+            dropped.y += 1.0;
+            if (check_collision(&dropped)) {
+                break;
+            }
+            current = dropped;
+            score += 2;
+        }
+        lock_piece();
+        update_score(clear_lines());
+        spawn_piece();
+
+        // check game over
+        if (check_collision(&current)) {
+            gameOver = true;
+        }
+        return;
+    }
+
+    // soft drop
+    if (input.softDrop && !current.onGround && gravity < (1 / SOFT_interval) && frame % SOFT_interval == 0) {
+        Piece moved = current;
+        moved.y = (int)moved.y + 1;
+        if (!check_collision(&moved)) {
+            current = moved;
+            score += 1;
+        }
+    }
+
+    // check onGround
+    Piece down = current;
+    down.y += 1.0;
+    bool coll = check_collision(&down);
+    if (coll && !current.onGround) {
+        current.onGround = true;
+    } else if (!coll && current.onGround) {
+        current.onGround = false;
+    }
+
+
+    // apply gravity
+    if (!current.onGround) current.y += gravity;
+    else {
+        current.y = (int)current.y;
+        lockDelay--;
+    }
+
+    if (lockDelay <= 0 && current.onGround) {
+        lock_piece();
+        update_score(clear_lines());
+        spawn_piece();
+
+        // check game over
+        if (check_collision(&current)) {
+            gameOver = true;
+        }
+    }
 }
 
+static void reset_lock_delay() {
+    if (current.onGround && lockResetCount > 0) {
+        lockDelay = LOCK_DELAY_FRAMES; // reset lock delay
+        lockResetCount--;
+    }
+    if (lockResetCount == 0) {
+        lockDelay = 0; // force lock
+    }
+}
 
-static PieceType get_next_piece() {}
+static Piece rotate_piece(Piece rp, bool clockwise) {
+    int oriRot = rp.rotation;
+    if (clockwise) rp.rotation = (rp.rotation + 1) % 4;
+    else rp.rotation = (rp.rotation + 3) % 4;
+    int newRot = rp.rotation;
+
+    if (rp.type == PIECE_O) return rp; // O 不需要位移測試
+    if (!check_collision(&rp)) return rp;
+    
+    Vector2 offsets[4] = { {0,0}, {0,0}, {0,0}, {0,0} }; // 最多嘗試 4 種位移
+    if (rp.type == PIECE_I) {
+        if ((oriRot == 0 && clockwise) || (oriRot == 3 && !clockwise)) { // 0->R | L->2
+            offsets[0] = (Vector2){ -2, 0 };
+            offsets[1] = (Vector2){ 1, 0 };
+            offsets[2] = (Vector2){ -2, 1 };
+            offsets[3] = (Vector2){ 1, -2 };
+        } else if ((oriRot == 1 && clockwise) || (oriRot == 0 && !clockwise)) { // R->2 | 0->L
+            offsets[0] = (Vector2){ -1, 0 };
+            offsets[1] = (Vector2){ 2, 0 };
+            offsets[2] = (Vector2){ -1, -2 };
+            offsets[3] = (Vector2){ 2, 1 };
+        } else if ((oriRot == 2 && clockwise) || (oriRot == 1 && !clockwise)) { // 2->L | R->0
+            offsets[0] = (Vector2){ 2, 0 };
+            offsets[1] = (Vector2){ -1, 0 };
+            offsets[2] = (Vector2){ 2, -1 };
+            offsets[3] = (Vector2){ -1, 2 };
+        } else if ((oriRot == 3 && clockwise) || (oriRot == 2 && !clockwise)) { // L->0 | 2->R
+            offsets[0] = (Vector2){ 1, 0 };
+            offsets[1] = (Vector2){ -2, 0 };
+            offsets[2] = (Vector2){ 1, 2 };
+            offsets[3] = (Vector2){ -2, -1 };
+        }
+    } else { // 其他方塊
+        if (oriRot == 1) { // R -> ?
+            offsets[0] = (Vector2){ 1, 0 };
+            offsets[1] = (Vector2){ 1, 1 };
+            offsets[2] = (Vector2){ 0, -2 };
+            offsets[3] = (Vector2){ 1, -2 };
+        } else if (oriRot == 3) { // L -> ?
+            offsets[0] = (Vector2){ -1, 0 };
+            offsets[1] = (Vector2){ -1, 1 };
+            offsets[2] = (Vector2){ 0, -2 };
+            offsets[3] = (Vector2){ -1, -2 };
+        } else if (newRot == 1) { // ? -> R
+            offsets[0] = (Vector2){ 1, 0 };
+            offsets[1] = (Vector2){ 1, -1 };
+            offsets[2] = (Vector2){ 0, 2 };
+            offsets[3] = (Vector2){ 1, 2 };
+        } else if (newRot == 3) { // ? -> L
+            offsets[0] = (Vector2){ -1, 0 };
+            offsets[1] = (Vector2){ -1, -1 };
+            offsets[2] = (Vector2){ 0, 2 };
+            offsets[3] = (Vector2){ -1, 2 };
+        }
+    }
+
+    for (int i=0; i<4; ++i) {
+        Piece test = rp;
+        test.x += (int)offsets[i].x;
+        test.y += (int)offsets[i].y;
+        if (!check_collision(&test)) {
+            return test;
+        }
+    }
+    return current; // 無法旋轉，回傳原本的
+}
+
+static void spawn_piece() {
+    bagIndex = (bagIndex + 1) % 14;
+    current = (Piece){ bag[bagIndex], 0, 4, 1.0, false };
+    holdLocked = false;
+    lockDelay = LOCK_DELAY_FRAMES;
+    lockResetCount = LOCK_RESET_MAX;
+}
 
 static void random_piece(bool forSecondBag) {
     int index = forSecondBag ? 7 : 0;
@@ -212,14 +422,97 @@ static void random_piece(bool forSecondBag) {
     }
 }
 
-static bool check_collision(const Piece* p) {}
+static bool check_collision(const Piece* p) {
+    for (int i = 0; i < 4; ++i) {
+        int bx = p->x + (int)SHAPES[p->type][p->rotation][i].x;
+        int by = (int)p->y + (int)SHAPES[p->type][p->rotation][i].y;
 
-static void lock_piece() {}
+        // 檢查邊界
+        if (bx < 0 || bx >= TETRIS_BOARD_W) return true;
+        if (by < 0 || by >= TETRIS_BOARD_H) return true;
 
-static int clear_lines() {}
+        // 檢查已鎖定的方塊
+        if (board[by][bx] != 0) return true;
+    }
+    return false;
+}
+
+static void lock_piece() {
+    for (int i = 0; i < 4; ++i) {
+        int bx = current.x + (int)SHAPES[current.type][current.rotation][i].x;
+        int by = (int)current.y + (int)SHAPES[current.type][current.rotation][i].y;
+
+        if (bx < 0 || bx >= TETRIS_BOARD_W) continue;
+        if (by < 0 || by >= TETRIS_BOARD_H) continue;
+
+        board[by][bx] = (int)(current.type) + 1; // 以 1..7 存
+    }
+}
+
+static int clear_lines() {
+    static int totalLinesCleared = 0;
+
+    int linesCleared = 0;
+    for (int y = TETRIS_BOARD_H-1; y >= 0; y--) {
+        bool full = true;
+        for (int x = 0; x < TETRIS_BOARD_W; x++) {
+            if (board[y][x] == 0) {
+                full = false;
+                break;
+            }
+        }
+
+        if (full) {
+            linesCleared++;
+            totalLinesCleared++;
+            // 清除該行
+            for (int ty = y; ty > 0; ty--) {
+                for (int x = 0; x < TETRIS_BOARD_W; x++) {
+                    board[ty][x] = board[ty - 1][x];
+                }
+            }
+            // 清空最上面一行
+            for (int x = 0; x < TETRIS_BOARD_W; x++) {
+                board[0][x] = 0;
+            }
+            // 回到同一行繼續檢查
+            y++;
+        }
+    }
+
+    level = __min(totalLinesCleared / 10 + 1, 15);
+    return linesCleared;
+}
+
+static void update_score(int linesCleared) {
+    static int combo = -1;
+    if (linesCleared > 0) {
+        combo++;
+    } else {
+        combo = -1;
+    }
+
+    switch (linesCleared) {
+    case 1:
+        score += 100 * level + 50 * combo * level;
+        break;
+    case 2:
+        score += 300 * level + 50 * combo * level;
+        break;
+    case 3:
+        score += 500 * level + 50 * combo * level;
+        break;
+    case 4:
+        score += 800 * level + 50 * combo * level;
+        break;
+    default:
+        break;
+    }
+}
+
 
 static void DrawPiecePreview(PieceType type, Rectangle box) {
-    DrawRectangleLinesEx(box, 1, Fade(WHITE, 0.5f));
+    // DrawRectangleLinesEx(box, 1, Fade(GRAY, 0.5f));
     float cell = ((box.width < box.height ? box.width : box.height) - 20.0f) / 2.0f;
     float centerX = box.x + box.width * 0.5f;
     float centerY = box.y + box.height * 0.5f;
@@ -251,8 +544,9 @@ static void DrawPiecePreview(PieceType type, Rectangle box) {
         int px = centerX + SHAPES[type][0][i].x * cell - cell * 0.5f;
         int py = centerY + SHAPES[type][0][i].y * cell - cell * 0.5f;
         int size = (int)(cell);
-        DrawRectangle(px, py, size, size, pieceColors[type]);
-        DrawRectangleLinesEx((Rectangle){px, py, size+1, size+1}, 1, BLACK);
+
+        DrawRectangle(px - 1, py, size, size, pieceColors[type]);
+        DrawRectangleLinesEx((Rectangle){px - 1, py, size+1, size+1}, 1, BLACK);
     }
 }
 
@@ -262,7 +556,7 @@ static void Draw_UI() {
 
     // ---------------- Left column ----------------
 
-    Rectangle holdPanel = (Rectangle){ leftCol.x, leftCol.y, leftCol.width, 130 };
+    Rectangle holdPanel = (Rectangle){ leftCol.x, leftCol.y, leftCol.width, 125 };
     Rectangle controlPanel = (Rectangle){ leftCol.x, leftCol.y + leftCol.height - 230, leftCol.width, 230 };
 
     GuiGroupBox(holdPanel, "Hold");
@@ -276,6 +570,12 @@ static void Draw_UI() {
             holdPanel.height - 15 - PAD
         };
         DrawPiecePreview(holdType, holdBox);
+
+        if (holdLocked) {
+            Color text = GetColor(GuiGetStyle(DEFAULT, TEXT_COLOR_NORMAL));
+            DrawRectangleRec(holdPanel, Fade(GRAY, 0.15f));
+            GuiDrawIcon(137, holdPanel.x + holdPanel.width - 32, holdPanel.y + 2, 2, text);
+        }
     }
 
     GuiGroupBox(controlPanel, "Control");
@@ -320,8 +620,8 @@ static void Draw_UI() {
         float innerGap = 10.0f;
 
         Rectangle box1 = (Rectangle){ px, py, pw, ph };
-        Rectangle box2 = (Rectangle){ px + pw * 0.1, py + box1.height, pw * 0.8, ph * 0.8 };
-        Rectangle box3 = (Rectangle){ px + pw * 0.1, py + box1.height + box2.height, pw * 0.8, ph * 0.8 };
+        Rectangle box2 = (Rectangle){ px + pw * 0.1, py + box1.height - 1, pw * 0.8, ph * 0.8 };
+        Rectangle box3 = (Rectangle){ px + pw * 0.1, py + box1.height + box2.height - 2, pw * 0.8, ph * 0.8 };
         // Rectangle smallBox2 = (Rectangle){ px + bigW + innerGap + smallW + innerGap, py, smallW, ph };
 
         DrawPiecePreview(bag[(bagIndex + 1) % 14], box1);
@@ -375,29 +675,19 @@ static void Draw_Board() {
     int oy = (int)(boardPanel.y + (boardPanel.height - (float)gridH) * 0.5f);
 
     Color line = GetColor(GuiGetStyle(DEFAULT, LINE_COLOR));
-
-    // 格子區外框
-    DrawRectangleLinesEx((Rectangle){ox, oy, gridW, gridH}, 0.8, line);
-    DrawLineEx((Vector2) { ox, oy + cell * 2 }, (Vector2) { ox, oy + gridH }, 1.5, line);
-    DrawLineEx((Vector2) { ox + gridW, oy + cell * 2 }, (Vector2) { ox + gridW, oy + gridH }, 1.5, line);
-    DrawLineEx((Vector2) { ox, oy + gridH }, (Vector2) { ox + gridW, oy + gridH }, 1.5, line);
     
-    // 已鎖定在盤面的方塊（board[y][x]：0=空，其它=種類）
-    for (int y = 0; y < TETRIS_BOARD_H; ++y) {
-        for (int x = 0; x < TETRIS_BOARD_W; ++x) {
-            int v = board[y][x];
-            if (v <= 0) continue;
+    // 格子區外框
+    DrawRectangleLinesEx((Rectangle) { ox - 1, oy, gridW + 1, gridH + 1 }, 0.8, line);
+    DrawLineEx((Vector2) { ox - 2, oy + cell * 2 }, (Vector2) { ox - 2, oy + gridH + 2 }, 1.5, line);
+    DrawLineEx((Vector2) { ox + gridW + 1, oy + cell * 2 }, (Vector2) { ox + gridW + 1, oy + gridH + 2 }, 1.5, line);
+    DrawLineEx((Vector2) { ox - 2, oy + gridH + 2 }, (Vector2) { ox + gridW + 1, oy + gridH + 2 }, 1.5, line);
 
-            // 預設以 1..7 存（所以 -1 取色），不符合就 clamp
-            int idx = v - 1;
-            if (idx < 0) idx = 0;
-            if (idx > 6) idx = 6;
-
-            int px = ox + x * cell;
-            int py = oy + y * cell;
-            DrawRectangle(px, py, cell - 1, cell - 1, pieceColors[idx]);
-            DrawRectangleLines(px, py, cell - 1, cell - 1, Fade(BLACK, 0.6f));
-        }
+    // 輕量格線（用 style 的 line color 淡化）
+    for (int x = 1; x < TETRIS_BOARD_W; ++x) {
+        DrawLine(ox + x * cell, oy, ox + x * cell, oy + gridH, Fade(line, 0.25f));
+    }
+    for (int y = 1; y < TETRIS_BOARD_H; ++y) {
+        DrawLine(ox, oy + y * cell, ox + gridW, oy + y * cell, Fade(line, 0.25f));
     }
 
     // 當前方塊（框架：邏輯補完後會自然呈現）
@@ -411,17 +701,50 @@ static void Draw_Board() {
 
             int px = ox + bx * cell;
             int py = oy + by * cell;
-            DrawRectangle(px, py, cell, cell, pieceColors[current.type]);
-            DrawRectangleLinesEx((Rectangle){ px, py, cell+1, cell+1}, 0.8, Fade(BLACK, 0.6f));
+            DrawRectangle(px - 1, py, cell, cell, pieceColors[current.type]);
+            DrawRectangleLinesEx((Rectangle) { px - 1, py, cell + 1, cell + 1 }, 1, BLACK);
+        }
+
+        // 陰影方塊
+        Piece shadow = current;
+        while (true) {
+            shadow.y += 1.0;
+            if (check_collision(&shadow)) {
+                shadow.y -= 1.0;
+                break;
+            }
+        }
+
+        for (int i = 0; i < 4; ++i) {
+            int bx = shadow.x + (int)SHAPES[shadow.type][shadow.rotation][i].x;
+            int by = (int)shadow.y + (int)SHAPES[shadow.type][shadow.rotation][i].y;
+
+            if (bx < 0 || bx >= TETRIS_BOARD_W) continue;
+            if (by < 0 || by >= TETRIS_BOARD_H) continue;
+
+            int px = ox + bx * cell;
+            int py = oy + by * cell;
+            DrawRectangle(px - 1, py, cell, cell, Fade(pieceColors[shadow.type], 0.4f));
+            DrawRectangleLinesEx((Rectangle) { px - 1, py, cell + 1, cell + 1 }, 1, Fade(BLACK, 0.25f));
         }
     }
 
-    // 輕量格線（用 style 的 line color 淡化）
-    for (int x = 1; x < TETRIS_BOARD_W; ++x) {
-        DrawLine(ox + x * cell, oy, ox + x * cell, oy + gridH, Fade(line, 0.25f));
-    }
-    for (int y = 1; y < TETRIS_BOARD_H; ++y) {
-        DrawLine(ox, oy + y * cell, ox + gridW, oy + y * cell, Fade(line, 0.25f));
+    // 已鎖定在盤面的方塊（board[y][x]：0=空，其它=種類）
+    for (int y = 0; y < TETRIS_BOARD_H; ++y) {
+        for (int x = 0; x < TETRIS_BOARD_W; ++x) {
+            int v = board[y][x];
+            if (v <= 0) continue;
+
+            // 預設以 1..7 存（所以 -1 取色），不符合就 clamp
+            int idx = v - 1;
+            if (idx < 0) idx = 0;
+            if (idx > 6) idx = 6;
+
+            int px = ox + x * cell;
+            int py = oy + y * cell;
+            DrawRectangle(px - 1, py, cell, cell, pieceColors[idx]);
+            DrawRectangleLinesEx((Rectangle) { px - 1, py, cell + 1, cell + 1 }, 1, BLACK);
+        }
     }
 }
 

@@ -5,6 +5,8 @@
 
 #define TETRIS_BOARD_W 10
 #define TETRIS_BOARD_H 22
+#define LOCK_DELAY_FRAMES 30
+#define LOCK_RESET_MAX 15
 
 void tetris(menuState* mainState);
 
