@@ -1,8 +1,10 @@
+#include <stdlib.h> /* 亂數相關函數 */
+#include <time.h>   /* 時間相關函數 */
+#include <stdio.h>
+
 #include "raylib.h"
 #include "raygui.h"
 #include "tetris.h"
-#include <stdlib.h> /* 亂數相關函數 */
-#include <time.h>   /* 時間相關函數 */
 
 static int WINDOW_WIDTH = 850;
 static int WINDOW_HEIGHT = 650;
@@ -90,6 +92,7 @@ static const Color pieceColors[7] = {
 static void Tetris_Init();
 static TetrisInput Tetris_GetInput();
 static void Tetris_Update(TetrisInput input);
+static void DAS(int counter, bool isRight, bool disableDAS);
 static void random_piece(bool forSecondBag);
 static bool check_collision(const Piece* p);
 static Piece rotate_piece(Piece rp, bool clockwise);
@@ -159,9 +162,10 @@ static void Tetris_Init() {
     pause = false;
     holdLocked = false;
     holdType = PIECE_NONE;
-    bagIndex = 0;
+    bagIndex = -1;
     random_piece(false);
     random_piece(true);
+    spawn_piece();
     current = (Piece){ bag[bagIndex], 0, 4, 1.0, false };
     for (int y = 0; y < TETRIS_BOARD_H; ++y) {
         for (int x = 0; x < TETRIS_BOARD_W; ++x) {
@@ -171,18 +175,30 @@ static void Tetris_Init() {
 }
 
 static TetrisInput Tetris_GetInput() {
+    static int left = 0, right = 0;
     TetrisInput input = {0};
     // for DAS or other can hold: IsKeyDown
     // else IsKeyPressed
-
-    //TODO: change to DAS
     if (IsKeyDown(KEY_LEFT)) {
-        input.left = true;
-    }
+        left++;
+    } else left = 0;
     
     if (IsKeyDown(KEY_RIGHT)) {
-        input.right = true;
+        right++;
+    } else right = 0;
+    
+    // avoid overflow
+    if (left > 200 && right > 200) {
+        left-=60;
+        right-=60;
+    } else if (left > 200 && right < 120) {
+        left-=60;
+    } else if (right > 200 && left < 120) {
+        right-=60;
     }
+
+    input.left = left;
+    input.right = right;
 
     if (IsKeyPressed(KEY_SPACE)) {
         input.hardDrop = true;
@@ -199,20 +215,16 @@ static TetrisInput Tetris_GetInput() {
     if (IsKeyPressed(KEY_C)) {
         input.hold = true;
     }
+
+    // printf("Input - L:%d R:%d SD:%d HD:%d RCW:%d RCCW:%d H:%d\n", input.left, input.right, input.softDrop, input.hardDrop, input.rotateCW, input.rotateCCW, input.hold);
+
     return input;
 }
 
 static void Tetris_Update(TetrisInput input) {
     static int frame = 0;
-    static double gravity = G[0];
-    static int DAS_counter_L = 0;
-    static int DAS_counter_R = 0;
-    static const int DAS_DELAY = 10; // frames before auto-shift starts
-    static int ARR = 2; // frames between auto-shifts
-    static int SOFT_interval = 2; // frames between soft drop moves
-    static int DCD = 5; // frames between DAS moves during delayed auto-shift (DAS Cancel Delay)
+    static int rot_hd_frame = -1;
 
-    gravity = G[level - 1];
     frame = (frame + 1) % 60;
 
     // hold
@@ -231,33 +243,35 @@ static void Tetris_Update(TetrisInput input) {
     }
 
     // left/right movement with DAS
-    // FIXME: 左右問題
-    static bool lastLeft = false, lastRight = false;
-    if (input.left || input.right) {
-        DAS_counter_L++;
-        if (DAS_counter_L == 1 || (DAS_counter_L > DAS_DELAY && (DAS_counter_L - DAS_DELAY) % ARR == 0)) {
-            Piece moved = current;
-            if (input.left) moved.x -= 1;
-            else if (input.right) moved.x += 1;
+    bool disableDAS = false;
+    int diff = rot_hd_frame >= 0 ? ((frame - rot_hd_frame + 60) % 60) : -1;
+    if (diff >= 0 && diff < DCD) disableDAS = true; // disable DAS for DCD frames after rotation/hold
+    else rot_hd_frame = -1;
 
-            if (!check_collision(&moved)) {
-                current = moved;
-                reset_lock_delay();
-            }
+    if (input.left > 0 && input.right > 0) {
+        if (input.right < input.left) { // 最後按右
+            DAS(input.right, true, disableDAS);
+        } else if (input.right > input.left) { // 最後按左
+            DAS(input.left, false, disableDAS);
         }
-    } else {
-        DAS_counter_L = 0;
+    } else if (input.left > 0) {
+        DAS(input.left, false, disableDAS);
+    } else if (input.right > 0) {
+        DAS(input.right, true, disableDAS);
     }
-    lastLeft = input.left;
-    lastRight = input.right;
 
     // rotation
+    Piece rot = current;
     if (input.rotateCW) {
-        current = rotate_piece(current, true);
-        reset_lock_delay();
+        rot = rotate_piece(rot, true);
     } else if (input.rotateCCW) {
-        current = rotate_piece(current, false);
+        rot = rotate_piece(rot, false);
+    }
+
+    if (rot.rotation != current.rotation) {
+        current = rot;
         reset_lock_delay();
+        rot_hd_frame = frame;
     }
 
     // hard drop
@@ -274,6 +288,7 @@ static void Tetris_Update(TetrisInput input) {
         lock_piece();
         update_score(clear_lines());
         spawn_piece();
+        rot_hd_frame = frame;
 
         // check game over
         if (check_collision(&current)) {
@@ -283,7 +298,7 @@ static void Tetris_Update(TetrisInput input) {
     }
 
     // soft drop
-    if (input.softDrop && !current.onGround && gravity < (1 / SOFT_interval) && frame % SOFT_interval == 0) {
+    if (input.softDrop && !current.onGround && G[level - 1] < (1.0 / SOFT_interval) && frame % SOFT_interval == 0) {
         Piece moved = current;
         moved.y = (int)moved.y + 1;
         if (!check_collision(&moved)) {
@@ -304,7 +319,7 @@ static void Tetris_Update(TetrisInput input) {
 
 
     // apply gravity
-    if (!current.onGround) current.y += gravity;
+    if (!current.onGround) current.y += G[level - 1];
     else {
         current.y = (int)current.y;
         lockDelay--;
@@ -318,6 +333,18 @@ static void Tetris_Update(TetrisInput input) {
         // check game over
         if (check_collision(&current)) {
             gameOver = true;
+        }
+    }
+}
+
+static void DAS(int counter, bool isRight, bool disableDAS) {
+    if (counter == 1 || (counter > DAS_DELAY && (counter - DAS_DELAY) % ARR == 0 && !disableDAS)) {
+        Piece moved = current;
+        moved.x += (isRight ? 1 : -1);
+
+        if (!check_collision(&moved)) {
+            current = moved;
+            reset_lock_delay();
         }
     }
 }
@@ -480,7 +507,7 @@ static int clear_lines() {
         }
     }
 
-    level = __min(totalLinesCleared / 10 + 1, 15);
+    level = min(totalLinesCleared / 10 + 1, 15);
     return linesCleared;
 }
 
