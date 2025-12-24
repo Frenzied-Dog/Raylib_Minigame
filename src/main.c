@@ -16,6 +16,7 @@ int main() {
 	printf("raygui controls test suite\n");	
 	SetConfigFlags(FLAG_WINDOW_HIGHDPI);
 	InitWindow(400, 200, "NCKU Raylib MiniGames");
+	InitAudioDevice();
 	SetTargetFPS(60);
 
 	menuState state = MAIN_MENU;
@@ -43,6 +44,7 @@ int main() {
 		}
 	}
 
+	CloseAudioDevice();
 	CloseWindow();
 	return 0;
 }

@@ -334,10 +334,12 @@ static void DrawBeveledBlock(int x, int y, int size, Color base) {
 
 static void DrawGridLines(int w, int h) {
 	// Color c = (Color){ 255, 255, 255, 18 };
-	Color c = (Color){ 18, 20, 26, 255 };
+	Color c = (Color){ 18, 20, 26, 128 };
 	
-	for (int x = 0; x <= w; x += 50) DrawLine(x, 0, x, h, c);
-	for (int y = 0; y <= h; y += 50) DrawLine(0, y, w, y, c);
+	for (int x = 0; x <= w; x += 50)
+		DrawLineEx((Vector2) {x, 0}, (Vector2){x, h}, 1, c);
+	for (int y = 0; y <= h; y += 50)
+		DrawLineEx((Vector2) { 0, y }, (Vector2) { w, y }, 1, c);
 }
 
 static void DrawLetterBitmap(const int bitmap[LETTER_ROWS][LETTER_COLS], int x, int y, int cell, Color c) {
@@ -449,19 +451,19 @@ int DrawMenu() {
 	}
 
 	// Title (blocky TETRIS)
-	int cell = 24;
-	int letterGap = 18;
+	int cell = 22;
+	int letterGap = 16;
 	int wordW = 6 * (LETTER_COLS * cell) + 5 * letterGap;
 	int startX = (TETRIS_WINDOW_WIDTH - wordW) / 2;
 	int startY = 70;
 
 	// soft glow behind title
-	DrawRectangleRounded((Rectangle) { startX - 20, startY - 18, (float)wordW + 40, 7.0f * cell + 30 }, 0.18f, 12, (Color) { 0, 0, 0, 110 });
+	DrawRectangleRounded((Rectangle) { startX - 20, startY - 15, (float)wordW + 40, 7.0f * cell + 35 }, 0.18f, 12, (Color) { 0, 0, 0, 110 });
 	DrawWordTETRIS(startX, startY, cell, letterGap);
 
 	// Center panel
 	Rectangle panel = { (float)(TETRIS_WINDOW_WIDTH / 2 - 210), 300, 420, 300 };
-	DrawRectangleRounded(panel, 0.18f, 14, (Color) { 0, 0, 0, 140 });
+	DrawRectangleRounded(panel, 0.18f, 14, (Color) { 0, 0, 0, 110 });
 	DrawRectangleRoundedLines(panel, 0.18f, 14, (Color) { 255, 255, 255, 20 });
 
 	// Buttons
@@ -475,26 +477,31 @@ int DrawMenu() {
 	Rectangle rHost = { bx, by + 1 * (bh + sp), bw, bh };
 	Rectangle rJoin = { bx, by + 2 * (bh + sp), bw, bh };
 	Rectangle rBack = { bx, by + 3 * (bh + sp), bw, bh };
-
+	
+	int ret = -1;
+	int prevFontSize = GuiGetStyle(DEFAULT, TEXT_SIZE);
+	GuiSetStyle(DEFAULT, TEXT_SIZE, 20);
 	if (GuiButton(rSingle, "Single Player"))
-		return 0;
+		ret = 0;
 
 	// Host/Join disabled
 	int prev = GuiGetState();
 	GuiSetState(STATE_DISABLED);
 	if (GuiButton(rHost, "Host Room"))
-		return 1;
+		ret = 1;
 	if (GuiButton(rJoin, "Join Room"))
-		return 2;
+		ret = 2;
 	GuiSetState(prev);
 
 	if (GuiButton(rBack, "Back To Main Menu"))
-		return 3;
+		ret = 3;
+
+	GuiSetStyle(DEFAULT, TEXT_SIZE, prevFontSize);
 
 	// Small hints / decorations
 	// DrawText("v0.1  |  raylib + raygui", (int)panel.x + 18, (int)(panel.y + panel.height + 14), 18, (Color) { 255, 255, 255, 140 });
 	// DrawText("Tip: Host/Join will unlock after networking is ready.", (int)panel.x + 18, (int)(panel.y + panel.height + 38), 18, (Color) { 255, 255, 255, 110 });
 
 
-	return -1;
+	return ret;
 }

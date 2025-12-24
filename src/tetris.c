@@ -44,6 +44,8 @@ void tetris(menuState *mainState) {
     GuiLoadStyleDefault();
     GuiSetStyle(DEFAULT, TEXT_SIZE, 15);
     UI_SetLayout();
+    Sound bgm = LoadSound("resources/Tetris.ogg"); // Preload sound
+    SetAudioStreamVolume(bgm.stream, 0.1f);
 
     while (!WindowShouldClose() && *mainState == STATE_TETRIS) {
         fixWindowDPI(TETRIS_WINDOW_WIDTH, TETRIS_WINDOW_HEIGHT);
@@ -52,14 +54,17 @@ void tetris(menuState *mainState) {
         int ret = -1;
         switch(state) {
         case MENU:
+            if (!IsSoundPlaying(bgm)) PlaySound(bgm);
             ret = DrawMenu();
             switch(ret) {
             case 0: // Start Game
                 Tetris_Init();
                 state = SINGLE;
+                StopSound(bgm);
                 break;
             case 3: // Back to Menu
                 *mainState = MAIN_MENU;
+                StopSound(bgm);
                 break;
             default:
                 break;
