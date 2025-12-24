@@ -14,4 +14,5 @@ bool inRange(int, int, int);
 
 #endif // MINESWEEPER_H
 
+//Ignore that below
 //GuiLabel((Rectangle){200, 180, 200, 40}, "Place mouse over input box to input");

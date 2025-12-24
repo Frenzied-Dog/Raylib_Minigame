@@ -17,8 +17,8 @@ const int EXPERT_GAME_HEIGHT = 16;
 const int EXPERT_MINES = 99;
 
 void minesweeper(menuState* mainState){
-	bool menuOrGame = false;//false: menu, true: game
-	int mode = -1;//0: beginner mode, 1: intermediate mode, 2: expert mode
+	bool menuOrGame = false; //false: menu, true: game
+	int mode = -1; //0: beginner mode, 1: intermediate mode, 2: expert mode
 	while(!WindowShouldClose() && *mainState == STATE_MINESWEEPER){
 		if(!menuOrGame){
 			MSmenu(mainState, &mode, &menuOrGame);
@@ -199,15 +199,15 @@ void MSgameDraw(int gameWidth, int gameHeight, int **map, int **step, bool *menu
 	int screenWidth = gameWidth * SQUARE_SIDE_LENGTH;
 	int screenHeight = gameHeight * SQUARE_SIDE_LENGTH + TOP_MENU_HEIGHT;
 	Color textColor[9] = {
-		BLANK,                         //0
-		(Color){ 0, 102, 204, 255 },   //1
-		(Color){ 0, 153, 0, 255 },     //2
-		(Color){ 204, 0, 0, 255 },     //3
-		(Color){ 102, 0, 153, 255 },   //4
-		(Color){ 153, 0, 51, 255 },    //5
-		(Color){ 0, 153, 153, 255 },   //6
-		BLACK,                         //7
-		(Color){ 96, 96, 96, 255 }     //8
+		BLANK,                       //0
+		(Color){0, 102, 204, 255},   //1
+		(Color){0, 153, 0, 255},     //2
+		(Color){204, 0, 0, 255},     //3
+		(Color){102, 0, 153, 255},   //4
+		(Color){153, 0, 51, 255},    //5
+		(Color){0, 153, 153, 255},   //6
+		BLACK,                       //7
+		(Color){96, 96, 96, 255}     //8
 	};
 	int textWidth;
 	int fontSize = 20;
@@ -227,7 +227,7 @@ void MSgameDraw(int gameWidth, int gameHeight, int **map, int **step, bool *menu
 					DrawRectangle(i * SQUARE_SIDE_LENGTH, j * SQUARE_SIDE_LENGTH + TOP_MENU_HEIGHT, SQUARE_SIDE_LENGTH, SQUARE_SIDE_LENGTH, LIGHTGRAY);
 				}
 			}else if(step[j][i] == 1){
-				DrawRectangle(i * SQUARE_SIDE_LENGTH, j * SQUARE_SIDE_LENGTH + TOP_MENU_HEIGHT, SQUARE_SIDE_LENGTH, SQUARE_SIDE_LENGTH, WHITE/*(Color){240, 238, 232, 255}*/);
+				DrawRectangle(i * SQUARE_SIDE_LENGTH, j * SQUARE_SIDE_LENGTH + TOP_MENU_HEIGHT, SQUARE_SIDE_LENGTH, SQUARE_SIDE_LENGTH, WHITE);
 				if(map[j][i] != -1){
 					textWidth = MeasureText(TextFormat("%d", map[j][i]), fontSize);
 					DrawText(TextFormat("%d", map[j][i]), i * SQUARE_SIDE_LENGTH + ((SQUARE_SIDE_LENGTH - textWidth) / 2), j * SQUARE_SIDE_LENGTH + TOP_MENU_HEIGHT + ((SQUARE_SIDE_LENGTH - fontSize) / 2), fontSize, textColor[map[j][i]]);
