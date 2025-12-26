@@ -43,7 +43,7 @@ int main() {
 			break;
 		}
 	}
-
+	CloseAudioDevice();
 	CloseWindow();
 	return 0;
 }

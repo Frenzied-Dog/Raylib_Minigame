@@ -10,9 +10,11 @@ void snake(menuState* mainState) {
 
     // [新增] 1. 載入音效資源
     // 注意：請確保你的 main.c 裡面有呼叫 InitAudioDevice(); 否則聲音不會響
-    Sound fxButton = LoadSound("resources/button.mp3"); // 請準備按鈕音效
+    //Sound fxButton = LoadSound("resources/button.mp3"); // 請準備按鈕音效
     Music bgm = LoadMusicStream("resources/game_bgm.mp3"); // 請準備背景音樂
-    
+    // [新增] 載入吃東西的音效 
+    Sound fxEat = LoadSound("resources/coin.mp3");
+
     // 設定音樂循環播放
     bgm.looping = true; 
     float volume = 0.5f; // 音量 50%
@@ -46,7 +48,7 @@ void snake(menuState* mainState) {
         fixWindowDPI(SNAKE_WIDTH, SNAKE_HEIGHT);
 
         // [新增] 3. 更新音樂串流 (這行一定要放在 while 迴圈的最外層)
-        // 只有在遊戲進行中才播放音樂，所以我們會根據狀態來決定是否 update
+        // 只有在遊戲進行中才播放音樂，所以會根據狀態來決定是否 update
         if (currentScreen == SCREEN_GAMEPLAY) {
             UpdateMusicStream(bgm);
         }
@@ -85,12 +87,14 @@ void snake(menuState* mainState) {
 
                     // 1. 吃到食物
                     if (snake[0].x == food.x && snake[0].y == food.y) {
+                        // [新增] 播放得分音效！
+                        PlaySound(fxEat);
                         snakeLength++;
                         score += 100;
                         
                         // [新增] 5. 難度調整算法：分數越高，延遲越低 (速度越快)
                         // 原始速度 10，每得 200 分，延遲減少 1
-                        // 最低延遲限制在 4 (不然會快到人類反應不過來)
+                        // 最低延遲限制在 4 (不然會快到反應不過來)
                         moveDelay = 10 - (score / 200); 
                         if (moveDelay < 4) moveDelay = 4;
 
@@ -123,7 +127,7 @@ void snake(menuState* mainState) {
             {
                 if (IsKeyPressed(KEY_ENTER)) {
                     // [新增] 按下 Enter 的音效
-                    PlaySound(fxButton);
+                    //PlaySound(fxButton);
                     currentScreen = SCREEN_MENU;
                 }
                 if (IsKeyPressed(KEY_Q)) {
@@ -146,19 +150,19 @@ void snake(menuState* mainState) {
                     DrawText("Select your snake color:", 290, 200, 20, GRAY);
                     
                     if (GuiButton((Rectangle) { 40, 30, 120, 30 }, "#191#Back to Menu")) {
-                        PlaySound(fxButton); // [新增] 按鈕音效
+                        //PlaySound(fxButton); // [新增] 按鈕音效
                         *mainState = MAIN_MENU;
                     }
 
                     if (GuiComboBox((Rectangle){ 300, 230, 200, 40 }, colorText, &activeColorIndex)) {
-                        PlaySound(fxButton); // [新增] 下拉選單音效
+                        //PlaySound(fxButton); // [新增] 下拉選單音效
                         editMode = !editMode;
                     }
 
                     if (!editMode) 
                     {
                         if (GuiButton((Rectangle){ 300, 350, 200, 50 }, "START GAME")) {
-                            PlaySound(fxButton); // [新增] 開始按鈕音效
+                            //PlaySound(fxButton); // [新增] 開始按鈕音效
 
                             // 重置遊戲數據
                             snakeLength = 3;
@@ -209,7 +213,9 @@ void snake(menuState* mainState) {
     }
 
     // [新增] 6. 離開函式前，記得釋放音效資源！
-    UnloadSound(fxButton);
+    //UnloadSound(fxButton);
     UnloadMusicStream(bgm);
+    // [新增] 釋放吃東西音效的記憶體
+    UnloadSound(fxEat);
     // 注意：CloseAudioDevice() 通常放在 main.c 的最後面，不要在這裡關閉，不然其他遊戲會沒聲音
 }
