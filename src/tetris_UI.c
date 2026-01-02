@@ -535,14 +535,15 @@ int DrawResultsScreen(int score, int totalLinesCleared, int level) {
 	float bx = panel.x + 45;
 	float by = panel.y + panel.height - 120;
 
+	int ret = -1;
 	int prevFontSize = GuiGetStyle(DEFAULT, TEXT_SIZE);
 	GuiSetStyle(DEFAULT, TEXT_SIZE, 20);
-	if (GuiButton((Rectangle) { bx, by, bw, bh }, "Retry")) return 0;
-	if (GuiButton((Rectangle) { bx, by + 60, bw, bh }, "Main Menu")) return 1;
-	if (GuiButton((Rectangle) { panel.x + panel.width - 95, panel.y + 40, 50, 50 }, "#184#")) return 2; // Screenshot
+	if (GuiButton((Rectangle) { bx, by, bw, bh }, "Retry")) ret = 0;
+	if (GuiButton((Rectangle) { bx, by + 60, bw, bh }, "Main Menu")) ret = 1;
+	if (GuiButton((Rectangle) { panel.x + panel.width - 95, panel.y + 40, 50, 50 }, "#184#")) ret = 2; // Screenshot
 	GuiSetStyle(DEFAULT, TEXT_SIZE, prevFontSize);
 
-	return -1;
+	return ret;
 }
 
 
