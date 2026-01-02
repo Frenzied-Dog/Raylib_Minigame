@@ -9,14 +9,6 @@
 #include "tetris_UI.h"
 
 static TetrisState state = MENU;
-static int aniState = 0; // animation state (used by game over anim)
-
-// ---- Game Over Explode (particles) ----
-#define EXPLODE_MAX_PARTICLES (TETRIS_BOARD_W*TETRIS_BOARD_H + 32)
-
-static BlockParticle explodeParticles[EXPLODE_MAX_PARTICLES];
-static int explodePhase = 0; // 0: not init, 1: freeze, 2: explode, 3: done
-
 static int board[TETRIS_BOARD_H][TETRIS_BOARD_W]; // 0=空，其它代表方塊種類
 static Piece current = { PIECE_NONE, 0, 0, 0.0, false };
 static Piece shadow = { PIECE_NONE, 0, 0, 0.0, false };
@@ -31,7 +23,18 @@ static int level = 1;
 static int bagIndex = 0;
 static PieceType bag[14]; // 7-bag 系統
 static int totalLinesCleared = 0;
+static Sound click;
 
+#define BGM_COUNT 3
+static Music bgm[BGM_COUNT];
+static int bgmIndex = 0;
+
+// ---- Game Over Explode (particles) ----
+#define EXPLODE_MAX_PARTICLES (TETRIS_BOARD_W*TETRIS_BOARD_H + 32)
+static BlockParticle explodeParticles[EXPLODE_MAX_PARTICLES];
+static int explodePhase = 0; // 0: not init, 1: freeze, 2: explode
+
+static void BGM_update(const bool isPaused);
 static void Tetris_Init();
 static TetrisInput Tetris_GetInput();
 static void Tetris_Update(TetrisInput input);
@@ -53,11 +56,20 @@ void tetris(menuState *mainState) {
     GuiLoadStyleDefault();
     GuiSetStyle(DEFAULT, TEXT_SIZE, 15);
     UI_SetLayout();
-    Sound bgm = LoadSound("resources/Tetris.ogg"); // Preload sound
-    SetAudioStreamVolume(bgm.stream, 0.1f);
     GuiSetIconScale(2);
     state = MENU;
-
+    
+    // Preload sounds
+    float preVolume = GetMasterVolume();
+    SetMasterVolume(0.1f);
+    Music theme_bgm = LoadMusicStream("resources/Tetris.ogg");
+    bgm[0] = LoadMusicStream("resources/tetris_bgm1.ogg"); bgm[0].looping = false;
+    bgm[1] = LoadMusicStream("resources/tetris_bgm2.ogg"); bgm[1].looping = false;
+    bgm[2] = LoadMusicStream("resources/tetris_bgm3.ogg"); bgm[2].looping = false;
+    PlayMusicStream(theme_bgm);
+    
+    click = LoadSound("resources/click.ogg"); 
+    
     while (!WindowShouldClose() && *mainState == STATE_TETRIS) {
         fixWindowDPI(TETRIS_WINDOW_WIDTH, TETRIS_WINDOW_HEIGHT);
         BeginDrawing();
@@ -66,17 +78,18 @@ void tetris(menuState *mainState) {
         int ret = -1;
         switch(state) {
         case MENU:
-            if (!IsSoundPlaying(bgm)) PlaySound(bgm);
+            UpdateMusicStream(theme_bgm);
             ret = DrawMenu();
             switch(ret) {
             case 0: // Start Game
                 Tetris_Init();
                 state = SINGLE;
-                StopSound(bgm);
+                StopMusicStream(theme_bgm);
+                PlayMusicStream(bgm[bgmIndex]);
                 break;
             case 3: // Back to Menu
                 *mainState = MAIN_MENU;
-                StopSound(bgm);
+                StopMusicStream(theme_bgm);
                 break;
             default:
                 break;
@@ -88,20 +101,26 @@ void tetris(menuState *mainState) {
 
             if (!gameOver) {
                 if (IsKeyPressed(KEY_ESCAPE)) pause = !pause;
+                BGM_update(pause);
 
-                if (!pause) Tetris_Update(Tetris_GetInput());
-                else {
+                if (!pause) {
+                    Tetris_Update(Tetris_GetInput());
+                } else {
                     int ret = Draw_PauseScreen(&pause, &state);
-                    if (ret == 1) { // Restart
+                    if (ret == 0) { // Continue
+                    } else if (ret == 1) { // Restart
                         Tetris_Init();
                         state = SINGLE;
+                        SeekMusicStream(bgm[bgmIndex], 0.0);
                     } else if (ret == 2) { // Menu
+                        StopMusicStream(bgm[bgmIndex]);
+                        PlayMusicStream(theme_bgm);
                         state = MENU;
                     }
                 }
             } else {
+                if (IsMusicStreamPlaying(bgm[bgmIndex])) StopMusicStream(bgm[bgmIndex]);
                 state = GAMEOVER_ANIM;
-                aniState = 0;
                 explodePhase = 0; // reset animation on entry
             }
             break;
@@ -113,10 +132,14 @@ void tetris(menuState *mainState) {
             Draw_UI(holdType, holdLocked, score, level, bag, bagIndex, &pause, gameOver);
             int r = DrawResultsScreen(score, totalLinesCleared, level);
             if (r == 0) { // Retry
-                Tetris_Init();
                 state = SINGLE;
+                Tetris_Init();
+                SeekMusicStream(bgm[bgmIndex], 0.0);
+                PlayMusicStream(bgm[bgmIndex]);
             } else if (r == 1) { // Back to menu
                 state = MENU;
+                SeekMusicStream(theme_bgm, 0.0);
+                PlayMusicStream(theme_bgm);
             } else if (r == 2) { // Screenshot
                 screenShotRequested = true;
             }
@@ -131,6 +154,9 @@ void tetris(menuState *mainState) {
     }
     GuiSetStyle(DEFAULT, TEXT_SIZE, 10);
     GuiSetIconScale(1);
+    SetMasterVolume(preVolume);
+    UnloadMusicStream(theme_bgm); UnloadSound(click);
+    UnloadMusicStream(bgm[0]); UnloadMusicStream(bgm[1]);
 }
 
 static void Tetris_Init() {
@@ -142,16 +168,16 @@ static void Tetris_Init() {
     pause = false;
     holdLocked = false;
     holdType = PIECE_NONE;
-    bagIndex = -1;
-    random_piece(false);
-    random_piece(true);
-    spawn_piece();
     // current = (Piece){ bag[bagIndex], 0, 4, 1.0, false };
     for (int y = 0; y < TETRIS_BOARD_H; ++y) {
         for (int x = 0; x < TETRIS_BOARD_W; ++x) {
             board[y][x] = 0;
         }
     }
+    bagIndex = -1;
+    random_piece(false);
+    random_piece(true);
+    spawn_piece();
 }
 
 static TetrisInput Tetris_GetInput() {
@@ -359,6 +385,7 @@ static void DAS(int counter, bool isRight, bool disableDAS) {
         if (!check_collision(&moved)) {
             current = moved;
             reset_lock_delay();
+            PlaySound(LoadSoundAlias(click));
 
             shadow = current;
             while (true) {
@@ -766,4 +793,30 @@ static void GameOverExplode_UpdateDraw(void) {
     default:
         break;
     }
+}
+
+void BGM_update(const bool isPaused) {
+    static float prevPlayed = 0.0f;
+    Music* m = &bgm[bgmIndex];
+
+    if (isPaused) {
+        PauseMusicStream(*m);
+        return;
+    }
+
+    ResumeMusicStream(*m);
+    UpdateMusicStream(*m);
+
+    float played = GetMusicTimePlayed(*m);
+
+    // 播到後面突然變小（常見：跳回 0）=> 視為播完
+    if (prevPlayed > 0.0f && played + 0.02f < prevPlayed) {
+        bgmIndex = (bgmIndex + 1) % BGM_COUNT;
+        SeekMusicStream(bgm[bgmIndex], 0.0f);
+        PlayMusicStream(bgm[bgmIndex]);
+        prevPlayed = 0.0f;
+        return;
+    }
+
+    prevPlayed = played;
 }

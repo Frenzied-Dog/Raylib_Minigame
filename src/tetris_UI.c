@@ -151,7 +151,7 @@ void Draw_UI(const PieceType holdType, const bool holdLocked, const int score, c
 	// 齒輪按鈕：右下角，距離視窗邊界 20
 	Rectangle gearBtn = { (float)(TETRIS_WINDOW_WIDTH - 20 - 50), (float)(TETRIS_WINDOW_HEIGHT - 20 - 50), (float)50, (float)50 };
 
-	if (gameOver) {
+	if (gameOver || *pause) {
 		int prev = GuiGetState();
 		GuiSetState(STATE_DISABLED);
 		GuiButton(gearBtn, "#142#");
@@ -509,8 +509,8 @@ int DrawMenu() {
 // Maybe can TakeScreenshot
 int DrawResultsScreen(int score, int totalLinesCleared, int level) {
 	// Keyboard shortcuts
-	if (IsKeyPressed(KEY_ENTER)) return 1;  // Retry
-	if (IsKeyPressed(KEY_ESCAPE)) return 2; // Menu
+	if (IsKeyPressed(KEY_ENTER)) return 0;  // Retry
+	if (IsKeyPressed(KEY_ESCAPE)) return 1; // Menu
 
 	DrawRectangle(0, 0, TETRIS_WINDOW_WIDTH, TETRIS_WINDOW_HEIGHT, Fade(BLACK, 0.55f));
 
