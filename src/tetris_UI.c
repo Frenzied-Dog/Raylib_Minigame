@@ -49,7 +49,7 @@ void DrawPiecePreview(PieceType type, Rectangle box) {
 }
 
 void Draw_UI(const PieceType holdType, const bool holdLocked, const int score, const int level,
-			const PieceType* bag, const int bagIndex, bool *pause) {
+			const PieceType* bag, const int bagIndex, bool *pause, const bool gameOver) {
 	const int GAP = 20;
 	const int PAD = 10;
 
@@ -150,12 +150,15 @@ void Draw_UI(const PieceType holdType, const bool holdLocked, const int score, c
 
 	// 齒輪按鈕：右下角，距離視窗邊界 20
 	Rectangle gearBtn = { (float)(TETRIS_WINDOW_WIDTH - 20 - 50), (float)(TETRIS_WINDOW_HEIGHT - 20 - 50), (float)50, (float)50 };
-	if (GuiButton(gearBtn, "#142#")) {
+
+	if (gameOver) {
+		int prev = GuiGetState();
+		GuiSetState(STATE_DISABLED);
+		GuiButton(gearBtn, "#142#");
+		GuiSetState(prev);
+	} else if (GuiButton(gearBtn, "#142#")) {
 		*pause = !(*pause);
 	}
-
-	// // 目前你的主迴圈暫停繪製被註解掉了；先在這裡直接疊上去，確保按齒輪會看到暫停畫面
-	// if (pause) Draw_PauseScreen();
 }
 
 void Draw_Board(const int board[22][10], const Piece current, const Piece shadow) {
@@ -314,7 +317,6 @@ static inline Color ColorAdd(Color c, int add) {
 }
 
 static void DrawBeveledBlock(int x, int y, int size, Color base) {
-	// All integer coords to avoid 1px "裂縫"
 	DrawRectangle(x, y, size, size, base);
 
 	// Bevel: top/left highlight, bottom/right shadow
@@ -417,7 +419,6 @@ static void DrawFallingPiece(const FallingPiece* p, float alpha) {
 	}
 }
 
-
 int DrawMenu() {
 	// GuiSetStyle(BUTTON, BORDER_WIDTH, 2);
 
@@ -502,6 +503,64 @@ int DrawMenu() {
 	// DrawText("v0.1  |  raylib + raygui", (int)panel.x + 18, (int)(panel.y + panel.height + 14), 18, (Color) { 255, 255, 255, 140 });
 	// DrawText("Tip: Host/Join will unlock after networking is ready.", (int)panel.x + 18, (int)(panel.y + panel.height + 38), 18, (Color) { 255, 255, 255, 110 });
 
-
 	return ret;
+}
+
+// Maybe can TakeScreenshot
+int DrawResultsScreen(int score, int totalLinesCleared, int level) {
+	// Keyboard shortcuts
+	if (IsKeyPressed(KEY_ENTER)) return 1;  // Retry
+	if (IsKeyPressed(KEY_ESCAPE)) return 2; // Menu
+
+	DrawRectangle(0, 0, TETRIS_WINDOW_WIDTH, TETRIS_WINDOW_HEIGHT, Fade(BLACK, 0.55f));
+
+	Rectangle panel = (Rectangle){ (float)(TETRIS_WINDOW_WIDTH / 2 - 230), (float)(TETRIS_WINDOW_HEIGHT / 2 - 170), 460, 340 };
+	GuiPanel(panel, "Result");
+
+	int x = (int)panel.x + 32;
+	int y = (int)panel.y + 52;
+
+	Color text = GetColor(GuiGetStyle(DEFAULT, TEXT_COLOR_NORMAL));
+
+	DrawText("GAME OVER", x, y - 15, 30, text);
+
+	DrawText(TextFormat("Score: %d", score), x, y + 30, 26, text);
+	DrawText(TextFormat("Lines: %d", totalLinesCleared), x, y + 65, 26, text);
+	DrawText(TextFormat("Level: %d", level), x, y + 100, 26, text);
+
+	DrawText("ENTER: Retry   ESC: Menu", x, y + 135, 20, Fade(text, 0.75f));
+
+	float bw = panel.width - 90;
+	float bh = 46;
+	float bx = panel.x + 45;
+	float by = panel.y + panel.height - 120;
+
+	int prevFontSize = GuiGetStyle(DEFAULT, TEXT_SIZE);
+	GuiSetStyle(DEFAULT, TEXT_SIZE, 20);
+	if (GuiButton((Rectangle) { bx, by, bw, bh }, "Retry")) return 0;
+	if (GuiButton((Rectangle) { bx, by + 60, bw, bh }, "Main Menu")) return 1;
+	if (GuiButton((Rectangle) { panel.x + panel.width - 95, panel.y + 40, 50, 50 }, "#184#")) return 2; // Screenshot
+	GuiSetStyle(DEFAULT, TEXT_SIZE, prevFontSize);
+
+	return -1;
+}
+
+
+void getBoardGrid(int* ox, int* oy, int* cell, int* gridW, int* gridH) {
+	int cw = (int)(boardPanel.width / (float)TETRIS_BOARD_W);
+	int ch = (int)(boardPanel.height / (float)TETRIS_BOARD_H);
+	int c = (cw < ch) ? cw : ch;
+	if (c < 1) c = 1;
+
+	int gW = c * TETRIS_BOARD_W;
+	int gH = c * TETRIS_BOARD_H;
+
+	int oxx = (int)(boardPanel.x + (boardPanel.width - (float)gW) * 0.5f);
+	int oyy = (int)(boardPanel.y + (boardPanel.height - (float)gH) * 0.5f);
+
+	if (ox) *ox = oxx;
+	if (oy) *oy = oyy;
+	if (cell) *cell = c;
+	if (gridW) *gridW = gW;
+	if (gridH) *gridH = gH;
 }

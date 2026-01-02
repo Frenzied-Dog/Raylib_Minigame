@@ -1,6 +1,7 @@
 #include <stdlib.h> /* 亂數相關函數 */
 #include <time.h>   /* 時間相關函數 */
 #include <stdio.h>
+#include <math.h>
 
 #include "raylib.h"
 #include "raygui.h"
@@ -8,10 +9,16 @@
 #include "tetris_UI.h"
 
 static TetrisState state = MENU;
-static int aniState = 0; // TODO: animation state
+static int aniState = 0; // animation state (used by game over anim)
+
+// ---- Game Over Explode (particles) ----
+#define EXPLODE_MAX_PARTICLES (TETRIS_BOARD_W*TETRIS_BOARD_H + 32)
+
+static BlockParticle explodeParticles[EXPLODE_MAX_PARTICLES];
+static int explodePhase = 0; // 0: not init, 1: freeze, 2: explode, 3: done
 
 static int board[TETRIS_BOARD_H][TETRIS_BOARD_W]; // 0=空，其它代表方塊種類
-static Piece current = {PIECE_NONE, 0, 0, 0.0, false};
+static Piece current = { PIECE_NONE, 0, 0, 0.0, false };
 static Piece shadow = { PIECE_NONE, 0, 0, 0.0, false };
 static PieceType holdType = PIECE_NONE;
 static bool holdLocked = false; // 本次落下是否已使用 hold
@@ -38,6 +45,8 @@ static int clear_lines();
 static void update_score(int linesCleared);
 static void spawn_piece();
 
+// game over explode animation
+static void GameOverExplode_UpdateDraw(void);
 
 void tetris(menuState *mainState) {
     SetRandomSeed((unsigned int)time(NULL));
@@ -46,11 +55,14 @@ void tetris(menuState *mainState) {
     UI_SetLayout();
     Sound bgm = LoadSound("resources/Tetris.ogg"); // Preload sound
     SetAudioStreamVolume(bgm.stream, 0.1f);
+    GuiSetIconScale(2);
+    state = MENU;
 
     while (!WindowShouldClose() && *mainState == STATE_TETRIS) {
         fixWindowDPI(TETRIS_WINDOW_WIDTH, TETRIS_WINDOW_HEIGHT);
         BeginDrawing();
         ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
+        bool screenShotRequested = false;
         int ret = -1;
         switch(state) {
         case MENU:
@@ -69,20 +81,14 @@ void tetris(menuState *mainState) {
             default:
                 break;
             }
-            // if (GuiButton((Rectangle) { 80, 90, 120, 30 }, "#191#Start Game")) {
-            //     Tetris_Init();
-            //     state = SINGLE;
-            // }
-            
-            // if (GuiButton((Rectangle) { 80, 50, 140, 30 }, "#191#Back to Menu")) {
-            //     *mainState = MAIN_MENU;
-            // }
             break;
         case SINGLE:
             Draw_Board(board, current, shadow);
-            Draw_UI(holdType, holdLocked, score, level, bag, bagIndex, &pause);
+            Draw_UI(holdType, holdLocked, score, level, bag, bagIndex, &pause, gameOver);
 
             if (!gameOver) {
+                if (IsKeyPressed(KEY_ESCAPE)) pause = !pause;
+
                 if (!pause) Tetris_Update(Tetris_GetInput());
                 else {
                     int ret = Draw_PauseScreen(&pause, &state);
@@ -94,21 +100,37 @@ void tetris(menuState *mainState) {
                     }
                 }
             } else {
-                // TODO: Animation
-                state = GAMEOVER;
+                state = GAMEOVER_ANIM;
+                aniState = 0;
+                explodePhase = 0; // reset animation on entry
             }
             break;
-        case GAMEOVER:
+        case GAMEOVER_ANIM:
+            GameOverExplode_UpdateDraw();
+            break;
+        case RESULTS: 
             Draw_Board(board, current, shadow);
-            Draw_UI(holdType, holdLocked, score, level, bag, bagIndex, &pause);
-            DrawText("Game Over", TETRIS_WINDOW_WIDTH / 2 - 100, TETRIS_WINDOW_HEIGHT / 2 - 20, 40, RED);
-            // TODO: Game Over Screen
+            Draw_UI(holdType, holdLocked, score, level, bag, bagIndex, &pause, gameOver);
+            int r = DrawResultsScreen(score, totalLinesCleared, level);
+            if (r == 0) { // Retry
+                Tetris_Init();
+                state = SINGLE;
+            } else if (r == 1) { // Back to menu
+                state = MENU;
+            } else if (r == 2) { // Screenshot
+                screenShotRequested = true;
+            }
             break;
         }
         
         EndDrawing();
+        if (screenShotRequested) {
+            TakeScreenshot(TextFormat("Tetris_Screenshot.png", score, level));
+            screenShotRequested = false;
+        }
     }
     GuiSetStyle(DEFAULT, TEXT_SIZE, 10);
+    GuiSetIconScale(1);
 }
 
 static void Tetris_Init() {
@@ -135,6 +157,7 @@ static void Tetris_Init() {
 static TetrisInput Tetris_GetInput() {
     static int left = 0, right = 0;
     TetrisInput input = {0};
+
     // for DAS or other can hold: IsKeyDown
     // else IsKeyPressed
     if (IsKeyDown(KEY_LEFT)) {
@@ -294,8 +317,24 @@ static void Tetris_Update(TetrisInput input) {
 
 
     // apply gravity
-    if (!current.onGround) current.y += G[level - 1];
-    else {
+    if (!current.onGround) {
+        double remaining = G[level - 1];
+        while (remaining > 0.0) {
+            double step = (remaining >= 1.0) ? 1.0 : remaining;
+
+            Piece moved = current;
+            moved.y += step;
+
+            if (check_collision(&moved)) {
+                // 撞到：停在目前格，標記著地。
+                current.onGround = true;
+                break;
+            }
+
+            current = moved;
+            remaining -= step;
+        }
+    } else {
         current.y = (int)current.y;
         lockDelay--;
     }
@@ -429,17 +468,12 @@ static void spawn_piece() {
 
 static void random_piece(bool forSecondBag) {
     int index = forSecondBag ? 7 : 0;
-    for (int i = 0; i < 7; ++i) {
-        bag[index + i] = (PieceType) i;
-    }
 
-    // 洗牌
-    for (int i = 0; i < 7; ++i) {
-        int j = rand() % 7;
-        PieceType temp = bag[index + i];
-        bag[index + i] = bag[index + j];
-        bag[index + j] = temp;
-    }
+    int *seq = LoadRandomSequence(7, 0, 6);
+    for (int i = 0; i < 7; ++i) 
+        bag[index + i] = (PieceType) seq[i];
+
+    UnloadRandomSequence(seq);
 }
 
 static bool check_collision(const Piece* p) {
@@ -522,6 +556,212 @@ static void update_score(int linesCleared) {
         break;
     case 4:
         score += 800 * level + 50 * combo * level;
+        break;
+    default:
+        break;
+    }
+}
+
+// ============================ Game Over Explode: Missing Implementations ============================
+static float Randf(float a, float b) {
+    // raylib GetRandomValue is inclusive, we map to float range
+    int r = GetRandomValue(0, 10000);
+    float t = (float)r / 10000.0f;
+    return a + (b - a) * t;
+}
+
+static void Explode_SpawnPiece(int* explodeCount) {
+    int ox, oy, cell, gridW, gridH;
+    getBoardGrid(&ox, &oy, &cell, &gridW, &gridH);
+
+    const float size = (float)cell;   // ✅ 每顆粒子就是一格大小
+    const float cx = (float)ox + (float)gridW * 0.5f;
+    const float cy = (float)oy + (float)gridH * 0.5f;
+
+    // 1) locked board blocks: 一格 = 一顆粒子
+    for (int y = 0; y < TETRIS_BOARD_H; y++) {
+        for (int x = 0; x < TETRIS_BOARD_W; x++) {
+            int v = board[y][x];
+            if (v <= 0) continue;
+            if (*explodeCount >= EXPLODE_MAX_PARTICLES) continue;
+
+            Color col = pieceColors[v-1];
+
+            float px = (float)ox + (float)x * (float)cell;
+            float py = (float)oy + (float)y * (float)cell;
+
+            // outward impulse
+            float bx = px + size * 0.5f;
+            float by = py + size * 0.5f;
+            float dx = bx - cx;
+            float dy = by - cy;
+
+            Vector2 vel = (Vector2){
+                Randf(-280.0f, 280.0f) + dx * 0.45f,
+                Randf(-650.0f, -260.0f) + dy * 0.15f
+            };
+
+            BlockParticle* p = &explodeParticles[(*explodeCount)++];
+            p->pos = (Vector2){ px, py };
+            p->vel = vel;
+            p->color = col;
+            p->onGround = false;
+            p->active = true;
+        }
+    }
+
+    if (*explodeCount >= EXPLODE_MAX_PARTICLES) return;
+
+    // 2) current piece blocks: 只拆成它的 4 格（若在板內）
+    if (current.type >= PIECE_I && current.type <= PIECE_L) {
+        Color col = pieceColors[(int)current.type];
+
+        for (int i = 0; i < 4; i++) {
+            int bx = current.x + (int)SHAPES[current.type][current.rotation][i].x;
+            int by = (int)current.y + (int)SHAPES[current.type][current.rotation][i].y;
+
+            if (bx < 0 || bx >= TETRIS_BOARD_W) continue;
+            if (by < 0 || by >= TETRIS_BOARD_H) continue;
+            // if (board[by][bx] != 0) continue; // 避免跟鎖定方塊重複
+
+            float px = (float)ox + (float)bx * (float)cell;
+            float py = (float)oy + (float)by * (float)cell;
+
+            float cx2 = px + size * 0.5f;
+            float cy2 = py + size * 0.5f;
+            float dx = cx2 - cx;
+            float dy = cy2 - cy;
+
+            Vector2 vel = (Vector2){
+                Randf(-280.0f, 280.0f) + dx * 0.45f,
+                Randf(-650.0f, -260.0f) + dy * 0.15f
+            };
+
+            BlockParticle* p = &explodeParticles[(*explodeCount)++];
+            p->pos = (Vector2){ px, py };
+            p->vel = vel;
+            p->color = col;
+            p->onGround = false;
+            p->active = true;
+        }
+    }
+}
+
+static void GameOverExplode_UpdateDraw(void) {
+    // Tunable parameters
+    const float FREEZE_SEC = 0.45f;  // 爆炸前停頓
+    const float GRAVITY = 1500.0f;   // 重力
+    const float END_SEC = 4.5f;      // 最長動畫時間（保險）
+    const float BOUNCE = 0.35f;      // 彈地係數
+    const float FRICTION = 0.85f;    // 水平摩擦
+
+    static int explodeCount = 0;
+    static float explodeTimer = 0.0f;
+
+
+    float dt = GetFrameTime();
+    explodeTimer += dt;
+
+    // overlay
+    Draw_UI(holdType, holdLocked, score, level, bag, bagIndex, &pause, gameOver);
+    DrawRectangle(0, 0, TETRIS_WINDOW_WIDTH, TETRIS_WINDOW_HEIGHT, Fade(BLACK, 0.15f));
+    Draw_Board(board, current, shadow);
+
+    const char* title = "GAME OVER";
+    int fs = 44;
+    int tw = MeasureText(title, fs);
+    DrawText(title, TETRIS_WINDOW_WIDTH / 2 - tw / 2, 170, fs, (Color) { 220, 70, 70, 255 });
+
+    switch (explodePhase) {
+    case 0:
+        explodeTimer = 0;     // start timer
+        for (int i = 0; i < EXPLODE_MAX_PARTICLES; i++) {
+            explodeParticles[i].active = false;
+        }
+        explodeCount = 0;
+
+        pause = false;
+        explodePhase = 1;      // freeze
+        break;
+    case 1:
+        // freeze phase
+        if (explodeTimer >= FREEZE_SEC) {
+            // spawn particles from current visuals
+            Explode_SpawnPiece(&explodeCount);
+
+            // clear board to avoid double-drawing with particles
+            for (int y = 0; y < TETRIS_BOARD_H; y++)
+                for (int x = 0; x < TETRIS_BOARD_W; x++)
+                    board[y][x] = 0;
+
+            current.type = PIECE_NONE;
+            shadow.type = PIECE_NONE;
+
+            explodePhase = 2;
+            explodeTimer = 0.0f;
+        }
+        break;
+    case 2:
+        // explode phase
+        // compute board pixel bounds for floor/walls
+        int cell;
+        getBoardGrid(NULL, NULL, &cell, NULL, NULL);
+
+        float bottom = (float)TETRIS_WINDOW_HEIGHT;
+
+        int alive = 0;
+
+        for (int i = 0; i < explodeCount; i++) {
+            BlockParticle* p = &explodeParticles[i];
+            if (!p->active) continue;
+
+
+            if (!p->onGround) {
+                alive++;
+
+                // integrate
+                p->vel.y += GRAVITY * dt;
+                p->pos.x += p->vel.x * dt;
+                p->pos.y += p->vel.y * dt;
+
+                // floor bounce
+                if (p->pos.y + cell > bottom) {
+                    p->pos.y = bottom - cell;
+                    p->vel.y *= -BOUNCE;
+                    p->vel.x *= FRICTION;
+
+                    if (fabsf(p->vel.y) < 60.0f) p->vel.y = 0.0f;
+                    if (fabsf(p->vel.x) < 10.0f) p->vel.x = 0.0f;
+                }
+            }
+
+            if (p->vel.y == 0.0f && p->pos.y + cell >= bottom) {
+                p->vel.x = 0.0f;
+                p->pos.y = bottom - cell;
+                p->onGround = true;
+            }
+
+            // draw
+            Rectangle rec = (Rectangle){ p->pos.x, p->pos.y, cell, cell };
+            DrawRectangleRec(rec, p->color);
+            DrawRectangleLinesEx(rec, 1, BLACK);
+        }
+
+        // finish condition
+        static bool ended = false;
+        if (alive == 0 && !ended) {
+            ended = true;
+            explodeTimer = max(explodeTimer, END_SEC - 0.4f);
+        }
+
+        if (explodeTimer >= END_SEC) {
+            ended = false;
+            explodePhase = 0;
+            explodeCount = 0;
+            explodeTimer = 0.0f;
+            state = RESULTS;
+        }
+
         break;
     default:
         break;

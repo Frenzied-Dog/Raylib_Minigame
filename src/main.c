@@ -18,6 +18,7 @@ int main() {
 	InitWindow(400, 200, "NCKU Raylib MiniGames");
 	InitAudioDevice();
 	SetTargetFPS(60);
+	SetExitKey(KEY_NULL);
 
 	menuState state = MAIN_MENU;
 	while (!WindowShouldClose()) {

@@ -19,7 +19,7 @@
 				]
 			},
 			"linux": {
-				"command": "/usr/bin/gcc",
+				"command": "/usr/bin/make",
 				"args": [
 					"debug"
 				]
@@ -37,19 +37,19 @@
 			"type": "process",
 			"command": "make",
 			"windows": {
-				"command": "C:/MinGW64/bin/gcc.exe",
+				"command": "C:/MinGW64/bin/mingw32-make.exe",
 				"args": [
 					"release"
 				],
 			},
 			"osx": {
-				"command": "/usr/bin/clang",
+				"command": "/usr/bin/make",
 				"args": [
 					"release"
 				]
 			},
 			"linux": {
-				"command": "/usr/bin/gcc",
+				"command": "/usr/bin/make",
 				"args": [
 					"release"
 				]

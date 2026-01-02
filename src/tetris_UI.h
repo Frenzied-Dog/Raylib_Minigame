@@ -8,13 +8,15 @@
 #define LETTER_COLS 5
 #define MAX_PIECE_COUNT 18
 
-void Draw_UI(const PieceType holdType, const bool holdLocked, const int score, const int level,
-	const PieceType* bag, const int bagIndex, bool* pause);
+void Draw_UI(const PieceType holdType, const bool holdLocked, const int score, const int level, const PieceType* bag, const int bagIndex, bool* pause, const bool gameOver);
 void Draw_Board(const int board[22][10], const Piece current, const Piece shadow);
 int Draw_PauseScreen(bool* pause, TetrisState* state);
 void DrawPiecePreview(PieceType type, Rectangle box);
 void UI_SetLayout();
 int DrawMenu();
+int DrawResultsScreen(int score, int totalLinesCleared, int level);
+
+void getBoardGrid(int* ox, int* oy, int* cell, int* gridW, int* gridH);
 
 static const int L_T[LETTER_ROWS][LETTER_COLS] = {
 	{1,1,1,1,1},

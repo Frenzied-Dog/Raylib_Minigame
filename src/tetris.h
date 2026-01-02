@@ -16,6 +16,14 @@
 
 void tetris(menuState* mainState);
 
+typedef struct {
+    Vector2 pos;
+    Vector2 vel;
+    Color color;
+    bool onGround;
+    bool active;
+} BlockParticle;
+
 typedef enum {
     PIECE_NONE = -1,
     PIECE_I,
@@ -48,7 +56,8 @@ typedef struct {
 typedef enum {
     MENU,
     SINGLE,
-    GAMEOVER
+    GAMEOVER_ANIM,
+    RESULTS
 } TetrisState;
 
 static const double G[] = { 0.01667, 0.021017, 0.026977, 0.035256, 0.04693, 0.06361, 0.0879, 0.1236, 0.1775, 0.2598, 0.388, 0.59, 0.92, 1.46, 2.36 }; // 等級對應重力 (幀/格)
