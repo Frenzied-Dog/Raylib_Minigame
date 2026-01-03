@@ -81,7 +81,7 @@ void Draw_UI(const PieceType holdType, const bool holdLocked, const int score, c
 		int fs = 20;
 		int lh = fs + 10;
 		int x = (int)(controlPanel.x + PAD);
-		int y = (int)(controlPanel.y + 30);
+		int y = (int)(controlPanel.y + 20);
 
 		// DrawText("Left/Right\nDown\nZ\nX\nC\nSpace", x, y + 0 * lh, fs, text);
 		DrawText("Left/Right:     /", x, y + 0 * lh, fs, text);
@@ -98,6 +98,10 @@ void Draw_UI(const PieceType holdType, const bool holdLocked, const int score, c
 
 		DrawText("C:        hold", x, y + 4 * lh, fs, text);
 		DrawText("Space:  hard drop", x, y + 5 * lh, fs, text);
+
+		DrawText("Esc:", x, y + 6 * lh, fs, text);
+		GuiDrawIcon(132, x + 85, y + 6 * lh - 6, 2, text);
+
 	}
 
 	// ---------------- Middle column (frame only) ----------------
@@ -239,7 +243,7 @@ void Draw_Board(const int board[22][10], const Piece current, const Piece shadow
 	}
 }
 
-int Draw_PauseScreen(bool *pause, TetrisState *state) {
+int Draw_PauseScreen(TetrisState *state) {
 	// 半透明遮罩 + 中央面板（繼續 / 重新開始 / 回到主選單）
 	DrawRectangle(0, 0, TETRIS_WINDOW_WIDTH, TETRIS_WINDOW_HEIGHT, Fade(BLACK, 0.45f));
 
@@ -260,19 +264,17 @@ int Draw_PauseScreen(bool *pause, TetrisState *state) {
 	float bh = 36;
 	float sp = 22;
 
-	if (GuiButton((Rectangle) { bx, by + 0 * (bh + sp), bw, bh }, "Continue")) {
-		*pause = false;
-		return 0;
-	}
-	if (GuiButton((Rectangle) { bx, by + 1 * (bh + sp), bw, bh }, "Restart")) {
-		*pause = false;
-		return 1;
-	}
-	if (GuiButton((Rectangle) { bx, by + 2 * (bh + sp), bw, bh }, "Main Menu")) {
-		*pause = false;
-		return 2;
-	}
-	return -1;
+	int ret = -1;
+	int prevFontSize = GuiGetStyle(DEFAULT, TEXT_SIZE);
+	GuiSetStyle(DEFAULT, TEXT_SIZE, 20);
+	if (GuiButton((Rectangle) { bx, by + 0 * (bh + sp), bw, bh }, "Continue"))
+		ret = 0;
+	if (GuiButton((Rectangle) { bx, by + 1 * (bh + sp), bw, bh }, "Restart"))
+		ret = 1;
+	if (GuiButton((Rectangle) { bx, by + 2 * (bh + sp), bw, bh }, "Main Menu"))
+		ret = 2;
+	GuiSetStyle(DEFAULT, TEXT_SIZE, prevFontSize);
+	return ret;
 }
 
 void UI_SetLayout() {

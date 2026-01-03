@@ -10,7 +10,7 @@
 
 void Draw_UI(const PieceType holdType, const bool holdLocked, const int score, const int level, const PieceType* bag, const int bagIndex, bool* pause, const bool gameOver);
 void Draw_Board(const int board[22][10], const Piece current, const Piece shadow);
-int Draw_PauseScreen(bool* pause, TetrisState* state);
+int Draw_PauseScreen(TetrisState* state);
 void DrawPiecePreview(PieceType type, Rectangle box);
 void UI_SetLayout();
 int DrawMenu();

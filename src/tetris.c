@@ -23,7 +23,7 @@ static int level = 1;
 static int bagIndex = 0;
 static PieceType bag[14]; // 7-bag 系統
 static int totalLinesCleared = 0;
-static Sound click;
+static Sound click_move_softDrop, click_spin_hold_hardDrop, lose, comboSound[12];
 
 #define BGM_COUNT 3
 static Music bgm[BGM_COUNT];
@@ -61,15 +61,24 @@ void tetris(menuState *mainState) {
     
     // Preload sounds
     float preVolume = GetMasterVolume();
-    SetMasterVolume(0.1f);
-    Music theme_bgm = LoadMusicStream("resources/Tetris.ogg");
-    bgm[0] = LoadMusicStream("resources/tetris_bgm1.ogg"); bgm[0].looping = false;
-    bgm[1] = LoadMusicStream("resources/tetris_bgm2.ogg"); bgm[1].looping = false;
-    bgm[2] = LoadMusicStream("resources/tetris_bgm3.ogg"); bgm[2].looping = false;
+    SetMasterVolume(0.3f);
+    Music theme_bgm = LoadMusicStream("resources/Tetris/Tetris.ogg");
+    SetMusicVolume(theme_bgm, 0.3f);
     PlayMusicStream(theme_bgm);
+    for (int i = 0; i < BGM_COUNT; i++) {
+        bgm[i] = LoadMusicStream(TextFormat("resources/Tetris/tetris_bgm%d.ogg", i + 1));
+        bgm[i].looping = false;
+        SetMusicVolume(bgm[i], 0.3f);
+    }
     
-    click = LoadSound("resources/click.ogg"); 
-    
+    click_move_softDrop = LoadSound("resources/Tetris/click1.ogg"); SetSoundVolume(click_move_softDrop, 0.5f);
+    click_spin_hold_hardDrop = LoadSound("resources/Tetris/click2.ogg"); SetSoundVolume(click_spin_hold_hardDrop, 0.3f);
+    lose = LoadSound("resources/Tetris/lose.ogg"); SetSoundVolume(lose, 0.4f);
+
+    for (int i = 0; i < 8; i++) {
+        comboSound[i] = LoadSound(TextFormat("resources/Tetris/combo-%d.ogg", i + 1));
+    }
+
     while (!WindowShouldClose() && *mainState == STATE_TETRIS) {
         fixWindowDPI(TETRIS_WINDOW_WIDTH, TETRIS_WINDOW_HEIGHT);
         BeginDrawing();
@@ -106,9 +115,10 @@ void tetris(menuState *mainState) {
                 if (!pause) {
                     Tetris_Update(Tetris_GetInput());
                 } else {
-                    int ret = Draw_PauseScreen(&pause, &state);
-                    if (ret == 0) { // Continue
-                    } else if (ret == 1) { // Restart
+                    int ret = Draw_PauseScreen(&state);
+                    if (ret >= 0) pause = false;
+
+                    if (ret == 1) { // Restart
                         Tetris_Init();
                         state = SINGLE;
                         SeekMusicStream(bgm[bgmIndex], 0.0);
@@ -155,12 +165,17 @@ void tetris(menuState *mainState) {
     GuiSetStyle(DEFAULT, TEXT_SIZE, 10);
     GuiSetIconScale(1);
     SetMasterVolume(preVolume);
-    UnloadMusicStream(theme_bgm); UnloadSound(click);
-    UnloadMusicStream(bgm[0]); UnloadMusicStream(bgm[1]);
+
+    UnloadMusicStream(theme_bgm);
+    for(int i = 0; i < BGM_COUNT; i++) UnloadMusicStream(bgm[i]);
+    UnloadSound(click_move_softDrop); UnloadSound(click_spin_hold_hardDrop); UnloadSound(lose);
+    for (int i = 0; i < 8; i++) UnloadSound(comboSound[i]);
 }
 
 static void Tetris_Init() {
+    SetRandomSeed((unsigned int)time(NULL));
     srand(time(NULL));
+    bgmIndex = GetRandomValue(0, BGM_COUNT - 1);
     score = 0;
     level = 1;
     totalLinesCleared = 0;
@@ -255,6 +270,7 @@ static void Tetris_Update(TetrisInput input) {
             }
         }
         holdLocked = true;
+        PlaySound(click_spin_hold_hardDrop);
         return;
     }
 
@@ -287,6 +303,8 @@ static void Tetris_Update(TetrisInput input) {
     if (rot.rotation != current.rotation) {
         current = rot;
         reset_lock_delay();
+        PlaySound(click_spin_hold_hardDrop);
+
         rot_hd_frame = frame;
         shadow = current;
         while (true) {
@@ -311,6 +329,12 @@ static void Tetris_Update(TetrisInput input) {
         }
         lock_piece();
         update_score(clear_lines());
+
+        Sound dropSound = LoadSoundAlias(click_spin_hold_hardDrop);
+        SetSoundVolume(dropSound, 0.5f);
+        SetSoundPitch(dropSound, 1.5f);
+        PlaySound(dropSound);
+
         spawn_piece();
         rot_hd_frame = frame;
 
@@ -326,6 +350,9 @@ static void Tetris_Update(TetrisInput input) {
         Piece moved = current;
         moved.y = (int)moved.y + 1;
         if (!check_collision(&moved)) {
+            Sound dropSound = LoadSoundAlias(click_move_softDrop);
+            SetSoundVolume(dropSound, 0.2f);
+            PlaySound(dropSound);
             current = moved;
             score += 1;
         }
@@ -385,7 +412,7 @@ static void DAS(int counter, bool isRight, bool disableDAS) {
         if (!check_collision(&moved)) {
             current = moved;
             reset_lock_delay();
-            PlaySound(LoadSoundAlias(click));
+            PlaySound(LoadSoundAlias(click_move_softDrop));
 
             shadow = current;
             while (true) {
@@ -410,12 +437,12 @@ static void reset_lock_delay() {
 }
 
 static Piece rotate_piece(Piece rp, bool clockwise) {
+    if (rp.type == PIECE_O) return rp; // O 不需要位移測試
     int oriRot = rp.rotation;
     if (clockwise) rp.rotation = (rp.rotation + 1) % 4;
     else rp.rotation = (rp.rotation + 3) % 4;
     int newRot = rp.rotation;
 
-    if (rp.type == PIECE_O) return rp; // O 不需要位移測試
     if (!check_collision(&rp)) return rp;
     
     Vector2 offsets[4] = { {0,0}, {0,0}, {0,0}, {0,0} }; // 最多嘗試 4 種位移
@@ -567,9 +594,14 @@ static void update_score(int linesCleared) {
     static int combo = -1;
     if (linesCleared > 0) {
         combo++;
+        PlaySound(LoadSoundAlias(comboSound[min(combo, 8)]));
+        Sound comboSnd = LoadSoundAlias(comboSound[min(combo, 8)]);
+        SetSoundVolume(comboSnd, 0.3f * (linesCleared-1));
+        PlaySound(comboSnd);
     } else {
         combo = -1;
     }
+
 
     switch (linesCleared) {
     case 1:
@@ -676,7 +708,7 @@ static void Explode_SpawnPiece(int* explodeCount) {
 
 static void GameOverExplode_UpdateDraw(void) {
     // Tunable parameters
-    const float FREEZE_SEC = 0.45f;  // 爆炸前停頓
+    const float FREEZE_SEC = 1.0f;  // 爆炸前停頓
     const float GRAVITY = 1500.0f;   // 重力
     const float END_SEC = 4.5f;      // 最長動畫時間（保險）
     const float BOUNCE = 0.35f;      // 彈地係數
@@ -684,7 +716,6 @@ static void GameOverExplode_UpdateDraw(void) {
 
     static int explodeCount = 0;
     static float explodeTimer = 0.0f;
-
 
     float dt = GetFrameTime();
     explodeTimer += dt;
@@ -695,7 +726,7 @@ static void GameOverExplode_UpdateDraw(void) {
     Draw_Board(board, current, shadow);
 
     const char* title = "GAME OVER";
-    int fs = 44;
+    int fs = 48;
     int tw = MeasureText(title, fs);
     DrawText(title, TETRIS_WINDOW_WIDTH / 2 - tw / 2, 170, fs, (Color) { 220, 70, 70, 255 });
 
@@ -712,6 +743,9 @@ static void GameOverExplode_UpdateDraw(void) {
         break;
     case 1:
         // freeze phase
+        if (explodeTimer >= FREEZE_SEC/2 && !IsSoundPlaying(lose))
+            PlaySound(lose);
+
         if (explodeTimer >= FREEZE_SEC) {
             // spawn particles from current visuals
             Explode_SpawnPiece(&explodeCount);
