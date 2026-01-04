@@ -8,7 +8,8 @@ typedef enum {
 	STATE_TETRIS,
 	STATE_SNAKE,
 	STATE_MINESWEEPER,
-	STATE_DODGE
+	STATE_DODGE,
+	EXIT	
 } menuState;
 
 void fixWindowDPI(int baseWidth, int baseHeight);

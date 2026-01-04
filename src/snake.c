@@ -2,12 +2,13 @@
 #include "raylib.h"
 #include "raygui.h"
 
-static int SNAKE_WIDTH = 800;
-static int SNAKE_HEIGHT = 600;
+static const int SNAKE_WIDTH = 800;
+static const int SNAKE_HEIGHT = 600;
 
 void snake(menuState* mainState) {
     SetWindowSize(SNAKE_WIDTH, SNAKE_HEIGHT);
-
+    int prevVolume = GetMasterVolume();
+    SetMasterVolume(0.5f);
     // [新增] 1. 載入音效資源
     // 注意：請確保你的 main.c 裡面有呼叫 InitAudioDevice(); 否則聲音不會響
     //Sound fxButton = LoadSound("resources/Snake/button.mp3"); // 請準備按鈕音效
@@ -218,4 +219,5 @@ void snake(menuState* mainState) {
     // [新增] 釋放吃東西音效的記憶體
     UnloadSound(fxEat);
     // 注意：CloseAudioDevice() 通常放在 main.c 的最後面，不要在這裡關閉，不然其他遊戲會沒聲音
+    SetMasterVolume(prevVolume);
 }

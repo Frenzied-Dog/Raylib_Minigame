@@ -1,6 +1,7 @@
 #include "common.h"
 #include "raylib.h"
 
+
 void fixWindowDPI(int baseWidth, int baseHeight) {
 	Vector2 DPI = GetWindowScaleDPI();
 	if (GetRenderWidth() != baseWidth * DPI.x || GetRenderHeight() != baseHeight * DPI.y) {

@@ -1,9 +1,9 @@
 #include <stdlib.h> /* 亂數相關函數 */
 #include <time.h>   /* 時間相關函數 */
-#include <stdio.h>
 
 #include "raylib.h"
 #include "raygui.h"
+#include "raymath.h"
 #include "tetris.h"
 #include "tetris_UI.h"
 
@@ -169,7 +169,7 @@ void Draw_Board(const int board[22][10], const Piece current, const Piece shadow
 	int cellW = (int)(boardPanel.width / (float)TETRIS_BOARD_W);
 	int cellH = (int)(boardPanel.height / (float)TETRIS_BOARD_H);
 	int cell = (cellW < cellH) ? cellW : cellH;
-	if (cell < 1) cell = 1;
+	cell = max(cell, 1);
 
 	int gridW = cell * TETRIS_BOARD_W;
 	int gridH = cell * TETRIS_BOARD_H;
@@ -230,8 +230,7 @@ void Draw_Board(const int board[22][10], const Piece current, const Piece shadow
 
 			// 預設以 1..7 存（所以 -1 取色），不符合就 clamp
 			int idx = v - 1;
-			if (idx < 0) idx = 0;
-			if (idx > 6) idx = 6;
+			idx = (int) Clamp((float)idx, 0.0f, 6.0f);
 
 			int px = ox + x * cell;
 			int py = oy + y * cell;
@@ -311,9 +310,9 @@ static inline Color ColorAdd(Color c, int add) {
 	int rr = (int)c.r + add;
 	int gg = (int)c.g + add;
 	int bb = (int)c.b + add;
-	if (rr < 0) rr = 0; if (rr > 255) rr = 255;
-	if (gg < 0) gg = 0; if (gg > 255) gg = 255;
-	if (bb < 0) bb = 0; if (bb > 255) bb = 255;
+	rr = (int) Clamp((float)rr, 0.0f, 255.0f);
+	gg = (int) Clamp((float)gg, 0.0f, 255.0f);
+	bb = (int) Clamp((float)bb, 0.0f, 255.0f);
 	return (Color) { (unsigned char)rr, (unsigned char)gg, (unsigned char)bb, c.a };
 }
 
@@ -545,7 +544,7 @@ void getBoardGrid(int* ox, int* oy, int* cell, int* gridW, int* gridH) {
 	int cw = (int)(boardPanel.width / (float)TETRIS_BOARD_W);
 	int ch = (int)(boardPanel.height / (float)TETRIS_BOARD_H);
 	int c = (cw < ch) ? cw : ch;
-	if (c < 1) c = 1;
+	c = max(c, 1);
 
 	int gW = c * TETRIS_BOARD_W;
 	int gH = c * TETRIS_BOARD_H;

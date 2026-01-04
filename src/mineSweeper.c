@@ -2,19 +2,19 @@
 #include "raygui.h"
 #include "mineSweeper.h"
 
-const int MS_WIDTH = 600;
-const int MS_HEIGHT = 400;
-const int TOP_MENU_HEIGHT = 40;
-const int SQUARE_SIDE_LENGTH = 30;
-const int BEGINNER_GAME_WIDTH = 9;
-const int BEGINNER_GAME_HEIGHT = 9;
-const int BEGINNER_MINES = 10;
-const int INTERMEDIATE_GAME_WIDTH = 16;
-const int INTERMEDIATE_GAME_HEIGHT = 16;
-const int INTERMEDIATE_MINES = 40;
-const int EXPERT_GAME_WIDTH = 30;
-const int EXPERT_GAME_HEIGHT = 16;
-const int EXPERT_MINES = 99;
+static const int MS_WIDTH = 600;
+static const int MS_HEIGHT = 400;
+static const int TOP_MENU_HEIGHT = 40;
+static const int SQUARE_SIDE_LENGTH = 30;
+static const int BEGINNER_GAME_WIDTH = 9;
+static const int BEGINNER_GAME_HEIGHT = 9;
+static const int BEGINNER_MINES = 10;
+static const int INTERMEDIATE_GAME_WIDTH = 16;
+static const int INTERMEDIATE_GAME_HEIGHT = 16;
+static const int INTERMEDIATE_MINES = 40;
+static const int EXPERT_GAME_WIDTH = 30;
+static const int EXPERT_GAME_HEIGHT = 16;
+static const int EXPERT_MINES = 99;
 
 void minesweeper(menuState* mainState){
 	bool menuOrGame = false; //false: menu, true: game

@@ -1,16 +1,9 @@
 #include "common.h"
 #include "raylib.h"
 #include "raygui.h"
+#include "raymath.h"
 #include <math.h>
  
-// Clamp function to constrain a value between a minimum and maximum
-static float Clamp(float value, float min, float max)
-{
-    if (value < min) return min;
-    if (value > max) return max;
-    return value;
-}
-
 #define MAX_OBSTACLES 24
 #define MAX_PARTICLES 140
 

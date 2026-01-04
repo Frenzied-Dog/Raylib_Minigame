@@ -2,8 +2,8 @@
 #include "raygui.h"
 #include "menu.h"
 
-int MENU_WIDTH = 450;
-int MENU_HEIGHT = 300;
+static const int MENU_WIDTH = 450;
+static const int MENU_HEIGHT = 300;
 
 void menu(menuState *mainState) {
 	SetWindowSize(MENU_WIDTH, MENU_HEIGHT);
@@ -21,7 +21,8 @@ void menu(menuState *mainState) {
 			*mainState = STATE_MINESWEEPER;
 		if (GuiButton((Rectangle) { 152, 64, 120, 30 }, "#157#Dodge")) 
 			*mainState = STATE_DODGE;
-
+		if (GuiButton((Rectangle) { 152, 220, 120, 30 }, "#157#Exit Game"))
+			*mainState = EXIT;
 		
 		EndDrawing();
 	}
