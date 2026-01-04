@@ -5,4 +5,12 @@
 
 void menu(menuState* state);
 
+typedef struct {
+	Vector2 pos;
+	Vector2 vel;
+	float size;
+	float alpha;
+	Color col;
+} DecoBlock;
+
 #endif // MENU_H

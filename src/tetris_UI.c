@@ -276,10 +276,8 @@ int Draw_PauseScreen(TetrisState *state) {
 
 void UI_SetLayout() {
 	SetWindowSize(TETRIS_WINDOW_WIDTH, TETRIS_WINDOW_HEIGHT);
-	Vector2 pos = GetWindowPosition();
-	SetWindowPosition(pos.x - 100, pos.y - 100);
 
-	// 介面構想圖：視窗 900x600；外距與各區塊間距皆為 20
+	// 介面構想圖：外距與各區塊間距皆為 20
 	const int M = 20;
 	const int GAP = 20;
 	const int LEFT_W = 220;
@@ -335,7 +333,7 @@ static void DrawBeveledBlock(int x, int y, int size, Color base) {
 }
 
 static void DrawGridLines(int w, int h) {
-	Color c = (Color){ 18, 20, 26, 128 };
+	Color c = (Color){ 18, 20, 26, 96 };
 	
 	for (int x = 0; x <= w; x += 50)
 		DrawLineEx((Vector2) {x, 0}, (Vector2){x, h}, 1, c);

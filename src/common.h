@@ -13,5 +13,6 @@ typedef enum {
 } menuState;
 
 void fixWindowDPI(int baseWidth, int baseHeight);
+float Randf(float a, float b);
 
 #endif // COMMON_H

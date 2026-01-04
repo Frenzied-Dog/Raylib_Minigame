@@ -618,13 +618,6 @@ static void update_score(int linesCleared) {
 }
 
 // ============================ Game Over Explode: Missing Implementations ============================
-static float Randf(float a, float b) {
-    // raylib GetRandomValue is inclusive, we map to float range
-    int r = GetRandomValue(0, 10000);
-    float t = (float)r / 10000.0f;
-    return a + (b - a) * t;
-}
-
 static void Explode_SpawnPiece(int* explodeCount) {
     int ox, oy, cell, gridW, gridH;
     getBoardGrid(&ox, &oy, &cell, &gridW, &gridH);

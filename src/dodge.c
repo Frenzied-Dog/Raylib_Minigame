@@ -306,7 +306,7 @@ void dodge(menuState* mainState)
 
         // HUD panel
         GuiPanel((Rectangle){ DODGE_WIDTH - 190, 30, 180, 70 }, "HUD"); // Moved higher by adjusting y from 50 to 30
-        DrawText(TextFormat("Score: %d", score), DODGE_WIDTH - 175, 50, 20, (Color){ 50, 50, 50, 255 }); // Adjusted y position from 70 to 50
+        DrawText(TextFormat("Score: %d", score), DODGE_WIDTH - 175, 55, 20, (Color){ 50, 50, 50, 255 }); // Adjusted y position from 70 to 50
         
         // Field
         DrawField(t);
