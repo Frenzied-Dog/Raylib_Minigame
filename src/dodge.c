@@ -2,7 +2,7 @@
 #include "raylib.h"
 #include "raygui.h"
 #include <math.h>
-
+ 
 // Clamp function to constrain a value between a minimum and maximum
 static float Clamp(float value, float min, float max)
 {
