@@ -149,9 +149,9 @@ void MSgame(int mode, bool *menuOrGame){
 			int x, y;
 			x = GetMouseX() / SQUARE_SIDE_LENGTH;
 			y = (GetMouseY() - TOP_MENU_HEIGHT) / SQUARE_SIDE_LENGTH;
-			if(step[y][x] != 2){
+			if(step[y][x] == 0){
 				step[y][x] = 2;
-			}else{
+			}else if(step[y][x] == 2){
 				step[y][x] = 0;
 			}
 		}
@@ -232,8 +232,8 @@ void MSgameDraw(int gameWidth, int gameHeight, int **map, int **step, bool *menu
 					textWidth = MeasureText(TextFormat("%d", map[j][i]), fontSize);
 					DrawText(TextFormat("%d", map[j][i]), i * SQUARE_SIDE_LENGTH + ((SQUARE_SIDE_LENGTH - textWidth) / 2), j * SQUARE_SIDE_LENGTH + TOP_MENU_HEIGHT + ((SQUARE_SIDE_LENGTH - fontSize) / 2), fontSize, textColor[map[j][i]]);
 				}else{
-					textWidth = MeasureText("X", fontSize);
-					DrawText("X", i * SQUARE_SIDE_LENGTH + ((SQUARE_SIDE_LENGTH - textWidth) / 2), j * SQUARE_SIDE_LENGTH + TOP_MENU_HEIGHT + ((SQUARE_SIDE_LENGTH - fontSize) / 2), fontSize, RED);
+					textWidth = MeasureText("*", fontSize);
+					DrawText("*", i * SQUARE_SIDE_LENGTH + ((SQUARE_SIDE_LENGTH - textWidth) / 2), j * SQUARE_SIDE_LENGTH + TOP_MENU_HEIGHT + ((SQUARE_SIDE_LENGTH - fontSize) / 2), fontSize, RED);
 				}
 			}else if(step[j][i] == 2){
 				DrawRectangle(i * SQUARE_SIDE_LENGTH, j * SQUARE_SIDE_LENGTH + TOP_MENU_HEIGHT, SQUARE_SIDE_LENGTH, SQUARE_SIDE_LENGTH, LIGHTGRAY);
