@@ -43,3 +43,6 @@ ehthumbs.db
 
 # Ccache and other caches
 ccache/
+
+# user-specific files
+*screenshot*
