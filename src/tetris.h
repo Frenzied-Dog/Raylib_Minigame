@@ -14,6 +14,9 @@
 #define DCD 5             // frames between DAS moves during delayed auto-shift (DAS Cancel Delay)
 #define SOFT_interval 2   // frames between soft drop moves
 
+#define BGM_COUNT 3
+#define EXPLODE_MAX_PARTICLES (TETRIS_BOARD_W*TETRIS_BOARD_H + 32)
+
 void tetris(menuState* mainState);
 
 typedef struct {

@@ -10,7 +10,6 @@
 static Rectangle leftCol, boardPanel, rightCol;
 
 void DrawPiecePreview(PieceType type, Rectangle box) {
-	// DrawRectangleLinesEx(box, 1, Fade(GRAY, 0.5f));
 	float cell = ((box.width < box.height ? box.width : box.height) - 20.0f) / 2.0f;
 	float centerX = box.x + box.width * 0.5f;
 	float centerY = box.y + box.height * 0.5f;
@@ -83,7 +82,6 @@ void Draw_UI(const PieceType holdType, const bool holdLocked, const int score, c
 		int x = (int)(controlPanel.x + PAD);
 		int y = (int)(controlPanel.y + 20);
 
-		// DrawText("Left/Right\nDown\nZ\nX\nC\nSpace", x, y + 0 * lh, fs, text);
 		DrawText("Left/Right:     /", x, y + 0 * lh, fs, text);
 		GuiDrawIcon(118, x + 135, y + 0 * lh + 2, 1, text);
 		GuiDrawIcon(119, x + 175, y + 0 * lh + 2, 1, text);
@@ -281,6 +279,7 @@ void UI_SetLayout() {
 	SetWindowSize(TETRIS_WINDOW_WIDTH, TETRIS_WINDOW_HEIGHT);
 	Vector2 pos = GetWindowPosition();
 	SetWindowPosition(pos.x - 100, pos.y - 100);
+
 	// 介面構想圖：視窗 900x600；外距與各區塊間距皆為 20
 	const int M = 20;
 	const int GAP = 20;
@@ -289,9 +288,9 @@ void UI_SetLayout() {
 
 	float innerH = (float)TETRIS_WINDOW_HEIGHT - 2.0f * M;
 
-	leftCol = (Rectangle){ (float)M, (float)M, (float)LEFT_W, innerH };
-	rightCol = (Rectangle){ (float)(TETRIS_WINDOW_WIDTH - M - RIGHT_W), (float)M, (float)RIGHT_W, innerH };
-	boardPanel = (Rectangle){
+	leftCol = (Rectangle) { (float)M, (float)M, (float)LEFT_W, innerH };
+	rightCol = (Rectangle) { (float)(TETRIS_WINDOW_WIDTH - M - RIGHT_W), (float)M, (float)RIGHT_W, innerH };
+	boardPanel = (Rectangle) {
 		leftCol.x + leftCol.width + (float)GAP,
 		(float)M - 2,
 		(float)(TETRIS_WINDOW_WIDTH - (2 * M + LEFT_W + RIGHT_W + 2 * GAP)),
@@ -337,7 +336,6 @@ static void DrawBeveledBlock(int x, int y, int size, Color base) {
 }
 
 static void DrawGridLines(int w, int h) {
-	// Color c = (Color){ 255, 255, 255, 18 };
 	Color c = (Color){ 18, 20, 26, 128 };
 	
 	for (int x = 0; x <= w; x += 50)
@@ -422,8 +420,6 @@ static void DrawFallingPiece(const FallingPiece* p, float alpha) {
 }
 
 int DrawMenu() {
-	// GuiSetStyle(BUTTON, BORDER_WIDTH, 2);
-
 	// background pieces
 	static FallingPiece pieces[MAX_PIECE_COUNT] = { 0 };
 	static bool initialized = false;
@@ -500,10 +496,6 @@ int DrawMenu() {
 		ret = 3;
 
 	GuiSetStyle(DEFAULT, TEXT_SIZE, prevFontSize);
-
-	// Small hints / decorations
-	// DrawText("v0.1  |  raylib + raygui", (int)panel.x + 18, (int)(panel.y + panel.height + 14), 18, (Color) { 255, 255, 255, 140 });
-	// DrawText("Tip: Host/Join will unlock after networking is ready.", (int)panel.x + 18, (int)(panel.y + panel.height + 38), 18, (Color) { 255, 255, 255, 110 });
 
 	return ret;
 }

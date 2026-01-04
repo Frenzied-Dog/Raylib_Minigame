@@ -8,6 +8,7 @@
 #include "tetris.h"
 #include "tetris_UI.h"
 
+// ---- Global Variables ----
 static TetrisState state = MENU;
 static int board[TETRIS_BOARD_H][TETRIS_BOARD_W]; // 0=空，其它代表方塊種類
 static Piece current = { PIECE_NONE, 0, 0, 0.0, false };
@@ -23,18 +24,8 @@ static int level = 1;
 static int bagIndex = 0;
 static PieceType bag[14]; // 7-bag 系統
 static int totalLinesCleared = 0;
-static Sound click_move_softDrop, click_spin_hold_hardDrop, lose, comboSound[12];
 
-#define BGM_COUNT 3
-static Music bgm[BGM_COUNT];
-static int bgmIndex = 0;
-
-// ---- Game Over Explode (particles) ----
-#define EXPLODE_MAX_PARTICLES (TETRIS_BOARD_W*TETRIS_BOARD_H + 32)
-static BlockParticle explodeParticles[EXPLODE_MAX_PARTICLES];
-static int explodePhase = 0; // 0: not init, 1: freeze, 2: explode
-
-static void BGM_update(const bool isPaused);
+// ---- Game Function Declarations ----
 static void Tetris_Init();
 static TetrisInput Tetris_GetInput();
 static void Tetris_Update(TetrisInput input);
@@ -48,11 +39,19 @@ static int clear_lines();
 static void update_score(int linesCleared);
 static void spawn_piece();
 
-// game over explode animation
+// ---- Background Musics / Sound Effects ----
+static Sound click_move_softDrop, click_spin_hold_hardDrop, lose, comboSound[12];
+static Music bgm[BGM_COUNT];
+static int bgmIndex = 0;
+static void BGM_update(const bool isPaused);
+
+// ---- Game Over Explode (particles) ----
+static BlockParticle explodeParticles[EXPLODE_MAX_PARTICLES];
+static int explodePhase = 0; // 0: not init, 1: freeze, 2: explode
 static void GameOverExplode_UpdateDraw(void);
 
+// ---- Game Main Loop ----
 void tetris(menuState *mainState) {
-    SetRandomSeed((unsigned int)time(NULL));
     GuiLoadStyleDefault();
     GuiSetStyle(DEFAULT, TEXT_SIZE, 15);
     UI_SetLayout();
@@ -62,6 +61,7 @@ void tetris(menuState *mainState) {
     // Preload sounds
     float preVolume = GetMasterVolume();
     SetMasterVolume(0.3f);
+
     Music theme_bgm = LoadMusicStream("resources/Tetris/Tetris.ogg");
     SetMusicVolume(theme_bgm, 0.3f);
     PlayMusicStream(theme_bgm);
@@ -75,10 +75,10 @@ void tetris(menuState *mainState) {
     click_spin_hold_hardDrop = LoadSound("resources/Tetris/click2.ogg"); SetSoundVolume(click_spin_hold_hardDrop, 0.3f);
     lose = LoadSound("resources/Tetris/lose.ogg"); SetSoundVolume(lose, 0.4f);
 
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 8; i++)
         comboSound[i] = LoadSound(TextFormat("resources/Tetris/combo-%d.ogg", i + 1));
-    }
 
+    // Main loop
     while (!WindowShouldClose() && *mainState == STATE_TETRIS) {
         fixWindowDPI(TETRIS_WINDOW_WIDTH, TETRIS_WINDOW_HEIGHT);
         BeginDrawing();
@@ -86,7 +86,7 @@ void tetris(menuState *mainState) {
         bool screenShotRequested = false;
         int ret = -1;
         switch(state) {
-        case MENU:
+        case MENU: // 選單
             UpdateMusicStream(theme_bgm);
             ret = DrawMenu();
             switch(ret) {
@@ -104,7 +104,7 @@ void tetris(menuState *mainState) {
                 break;
             }
             break;
-        case SINGLE:
+        case SINGLE: // 單人遊戲
             Draw_Board(board, current, shadow);
             Draw_UI(holdType, holdLocked, score, level, bag, bagIndex, &pause, gameOver);
 
@@ -134,10 +134,10 @@ void tetris(menuState *mainState) {
                 explodePhase = 0; // reset animation on entry
             }
             break;
-        case GAMEOVER_ANIM:
+        case GAMEOVER_ANIM: // 遊戲結束動畫
             GameOverExplode_UpdateDraw();
             break;
-        case RESULTS: 
+        case RESULTS:  // 結果畫面
             Draw_Board(board, current, shadow);
             Draw_UI(holdType, holdLocked, score, level, bag, bagIndex, &pause, gameOver);
             int r = DrawResultsScreen(score, totalLinesCleared, level);
@@ -237,8 +237,6 @@ static TetrisInput Tetris_GetInput() {
     if (IsKeyPressed(KEY_C)) {
         input.hold = true;
     }
-
-    // printf("Input - L:%d R:%d SD:%d HD:%d RCW:%d RCCW:%d H:%d\n", input.left, input.right, input.softDrop, input.hardDrop, input.rotateCW, input.rotateCCW, input.hold);
 
     return input;
 }
@@ -367,7 +365,6 @@ static void Tetris_Update(TetrisInput input) {
     } else if (!coll && current.onGround) {
         current.onGround = false;
     }
-
 
     // apply gravity
     if (!current.onGround) {
@@ -602,7 +599,6 @@ static void update_score(int linesCleared) {
         combo = -1;
     }
 
-
     switch (linesCleared) {
     case 1:
         score += 100 * level + 50 * combo * level;
@@ -739,7 +735,7 @@ static void GameOverExplode_UpdateDraw(void) {
         explodeCount = 0;
 
         pause = false;
-        explodePhase = 1;      // freeze
+        explodePhase = 1;     // freeze
         break;
     case 1:
         // freeze phase
