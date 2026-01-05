@@ -42,7 +42,7 @@ void DrawSnakeBackground() {
 void snake(menuState* mainState) {
     SetWindowSize(SNAKE_WIDTH, SNAKE_HEIGHT);
     int prevVolume = GetMasterVolume();
-    SetMasterVolume(0.5f);
+    SetMasterVolume(0.4f);
     
     // --- 1. 載入音效資源 ---
     Music bgm = LoadMusicStream("resources/Snake/game_bgm.mp3"); // 請準備背景音樂
@@ -294,6 +294,6 @@ void snake(menuState* mainState) {
     UnloadSound(fxEat);
     UnloadSound(fxButton);
     UnloadSound(fxGameOver);
-    
+
     SetMasterVolume(prevVolume);    
 }

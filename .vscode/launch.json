@@ -8,7 +8,7 @@
 			"name": "Debug",
 			"type": "cppdbg",
 			"request": "launch",
-			"program": "${workspaceFolder}/build/debug/main",
+			"program": "${workspaceFolder}/build/debug/Raylib_Minigame",
 			"args": [],
 			"stopAtEntry": false,
 			"cwd": "${workspaceFolder}",
@@ -23,15 +23,15 @@
 				}
 			],
 			"windows": {
-				"program": "${workspaceFolder}/build/debug/main.exe",
+				"program": "${workspaceFolder}/build/debug/Raylib_Minigame.exe",
 				"miDebuggerPath": "C:/MinGW64/bin/gdb.exe"
 			},
 			"osx": {
-				"program": "${workspaceFolder}/build/debug/main_mac",
+				"program": "${workspaceFolder}/build/debug/Raylib_Minigame_mac",
 				"MIMode": "lldb"
 			},
 			"linux": {
-				"program": "${workspaceFolder}/build/debug/main_linux",
+				"program": "${workspaceFolder}/build/debug/Raylib_Minigame_linux",
 				"miDebuggerPath": "/usr/bin/gdb"
 			},
 			"preLaunchTask": "build debug"
@@ -45,18 +45,18 @@
 			"cwd": "${workspaceFolder}",
 			"environment": [],
 			"externalConsole": false,
-			"program": "${workspaceFolder}/release/main",
+			"program": "${workspaceFolder}/release/Raylib_Minigame",
 			"MIMode": "gdb",
 			"windows": {
-				"program": "${workspaceFolder}/build/release/main.exe",
+				"program": "${workspaceFolder}/build/release/Raylib_Minigame.exe",
 				"miDebuggerPath": "C:/MinGW64/bin/gdb.exe",
 			},
 			"osx": {
-				"program": "${workspaceFolder}/build/release/main_mac",
+				"program": "${workspaceFolder}/build/release/Raylib_Minigame_mac",
 				"MIMode": "lldb"
 			},
 			"linux": {
-				"program": "${workspaceFolder}/build/release/main_linux",
+				"program": "${workspaceFolder}/build/release/Raylib_Minigame_linux",
 				"miDebuggerPath": "/usr/bin/gdb"
 			},
 			"preLaunchTask": "build release",
