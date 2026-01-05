@@ -15,7 +15,7 @@ int main() {
 	InitAudioDevice();
 	SetTargetFPS(60);
 	SetExitKey(KEY_NULL);
-	SetWindowIcon(LoadImage("Raylib_logo.png"));
+	SetWindowIcon(LoadImage("resources/Raylib_logo.png"));
 	menuState state = MAIN_MENU;
 	while (!WindowShouldClose() && state != EXIT) {
 		switch (state) {

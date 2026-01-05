@@ -25,20 +25,20 @@ release_CFLAGS := -O2 -fdiagnostics-color=always -I"$(INC_PATH)"
 # 3.1 Windows (win64)
 win64_CC := C:/MinGW64/bin/gcc.exe
 win64_LIB_PATH := lib/win64
-win64_TARGET := main.exe
+win64_TARGET := Raylib_Minigame.exe
 win64_LIBS := -lraylib -lgdi32 -lwinmm
 
 # 3.2 macOS (mac)
 mac_CC := /usr/bin/clang
 mac_LIB_PATH := lib/mac
-mac_TARGET := main_mac
+mac_TARGET := Raylib_Minigame_mac
 mac_LIBS := -lraylib -framework OpenGL -framework OpenAL -framework Cocoa -framework IOKit
 
 
 # 3.3 Linux (linux)
 linux_CC := /usr/bin/gcc
 linux_LIB_PATH := lib/linux
-linux_TARGET := main_linux
+linux_TARGET := Raylib_Minigame_linux
 linux_LIBS := -lraylib -lGL -lm -ldl -lrt -lpthread -lX11
 
 # ==============================================================================
