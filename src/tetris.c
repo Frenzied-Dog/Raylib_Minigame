@@ -40,7 +40,7 @@ static void update_score(int linesCleared);
 static void spawn_piece();
 
 // ---- Background Musics / Sound Effects ----
-static Sound click_move_softDrop, click_spin_hold_hardDrop, lose, comboSound[12];
+static Sound click_move_softDrop, click_spin_hold_hardDrop, lose, comboSound[8];
 static Music bgm[BGM_COUNT];
 static int bgmIndex = 0;
 static void BGM_update(const bool isPaused);
@@ -591,8 +591,8 @@ static void update_score(int linesCleared) {
     static int combo = -1;
     if (linesCleared > 0) {
         combo++;
-        PlaySound(LoadSoundAlias(comboSound[min(combo, 8)]));
-        Sound comboSnd = LoadSoundAlias(comboSound[min(combo, 8)]);
+        PlaySound(LoadSoundAlias(comboSound[min(combo, 7)]));
+        Sound comboSnd = LoadSoundAlias(comboSound[min(combo, 7)]);
         SetSoundVolume(comboSnd, 0.3f * (linesCleared-1));
         PlaySound(comboSnd);
     } else {
