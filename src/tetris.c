@@ -27,20 +27,21 @@ static int totalLinesCleared = 0;
 
 // ---- Game Function Declarations ----
 static void Tetris_Init();
-static TetrisInput Tetris_GetInput();
-static void Tetris_Update(TetrisInput input);
+static inline TetrisInput Tetris_GetInput();
+static inline void Tetris_Update(TetrisInput input);
+static inline void update_shadow();
 static void DAS(int counter, bool isRight, bool disableDAS);
-static void random_piece(bool forSecondBag);
-static bool check_collision(const Piece* p);
+static inline void random_piece(bool forSecondBag);
+static inline bool check_collision(const Piece* p);
 static Piece rotate_piece(Piece rp, bool clockwise);
-static void reset_lock_delay();
-static void lock_piece();
+static inline void reset_lock_delay();
+static inline void lock_piece();
 static int clear_lines();
-static void update_score(int linesCleared);
-static void spawn_piece();
+static inline void update_score(int linesCleared);
+static inline void spawn_piece();
 
 // ---- Background Musics / Sound Effects ----
-static Sound click_move_softDrop, click_spin_hold_hardDrop, lose, comboSound[12];
+static Sound click_move_softDrop, click_spin_hold_hardDrop, lose, comboSound[8];
 static Music bgm[BGM_COUNT];
 static int bgmIndex = 0;
 static void BGM_update(const bool isPaused);
@@ -195,7 +196,7 @@ static void Tetris_Init() {
     spawn_piece();
 }
 
-static TetrisInput Tetris_GetInput() {
+static inline TetrisInput Tetris_GetInput() {
     static int left = 0, right = 0;
     TetrisInput input = {0};
 
@@ -241,7 +242,7 @@ static TetrisInput Tetris_GetInput() {
     return input;
 }
 
-static void Tetris_Update(TetrisInput input) {
+static inline void Tetris_Update(TetrisInput input) {
     static int frame = 0;
     static int rot_hd_frame = -1;
 
@@ -258,14 +259,7 @@ static void Tetris_Update(TetrisInput input) {
             lockDelay = LOCK_DELAY_FRAMES;
             lockResetCount = LOCK_RESET_MAX;
 
-            shadow = current;
-            while (true) {
-                shadow.y += 1.0;
-                if (check_collision(&shadow)) {
-                    shadow.y -= 1.0;
-                    break;
-                }
-            }
+            update_shadow();
         }
         holdLocked = true;
         PlaySound(click_spin_hold_hardDrop);
@@ -304,14 +298,7 @@ static void Tetris_Update(TetrisInput input) {
         PlaySound(click_spin_hold_hardDrop);
 
         rot_hd_frame = frame;
-        shadow = current;
-        while (true) {
-            shadow.y += 1.0;
-            if (check_collision(&shadow)) {
-                shadow.y -= 1.0;
-                break;
-            }
-        }
+        update_shadow();
     }
 
     // hard drop
@@ -401,6 +388,17 @@ static void Tetris_Update(TetrisInput input) {
     }
 }
 
+static inline void update_shadow() {
+    shadow = current;
+    while (true) {
+        shadow.y += 1.0;
+        if (check_collision(&shadow)) {
+            shadow.y -= 1.0;
+            break;
+        }
+    }
+}
+
 static void DAS(int counter, bool isRight, bool disableDAS) {
     if (counter == 1 || (counter > DAS_DELAY && (counter - DAS_DELAY) % ARR == 0 && !disableDAS)) {
         Piece moved = current;
@@ -411,19 +409,12 @@ static void DAS(int counter, bool isRight, bool disableDAS) {
             reset_lock_delay();
             PlaySound(LoadSoundAlias(click_move_softDrop));
 
-            shadow = current;
-            while (true) {
-                shadow.y += 1.0;
-                if (check_collision(&shadow)) {
-                    shadow.y -= 1.0;
-                    break;
-                }
-            }
+            update_shadow();
         }
     }
 }
 
-static void reset_lock_delay() {
+static inline void reset_lock_delay() {
     if (current.onGround && lockResetCount > 0) {
         lockDelay = LOCK_DELAY_FRAMES; // reset lock delay
         lockResetCount--;
@@ -477,15 +468,15 @@ static Piece rotate_piece(Piece rp, bool clockwise) {
             offsets[2] = (Vector2){ 0, -2 };
             offsets[3] = (Vector2){ -1, -2 };
         } else if (newRot == 1) { // ? -> R
-            offsets[0] = (Vector2){ 1, 0 };
-            offsets[1] = (Vector2){ 1, -1 };
-            offsets[2] = (Vector2){ 0, 2 };
-            offsets[3] = (Vector2){ 1, 2 };
-        } else if (newRot == 3) { // ? -> L
             offsets[0] = (Vector2){ -1, 0 };
             offsets[1] = (Vector2){ -1, -1 };
             offsets[2] = (Vector2){ 0, 2 };
             offsets[3] = (Vector2){ -1, 2 };
+        } else if (newRot == 3) { // ? -> L
+            offsets[0] = (Vector2){ 1, 0 };
+            offsets[1] = (Vector2){ 1, -1 };
+            offsets[2] = (Vector2){ 0, 2 };
+            offsets[3] = (Vector2){ 1, 2 };
         }
     }
 
@@ -493,31 +484,28 @@ static Piece rotate_piece(Piece rp, bool clockwise) {
         Piece test = rp;
         test.x += (int)offsets[i].x;
         test.y += (int)offsets[i].y;
-        if (!check_collision(&test)) {
+        if (!check_collision(&test))
             return test;
-        }
     }
     return current; // 無法旋轉，回傳原本的
 }
 
-static void spawn_piece() {
+static inline void spawn_piece() {
     bagIndex = (bagIndex + 1) % 14;
     current = (Piece){ bag[bagIndex], 0, 4, 1.0, false };
     holdLocked = false;
     lockDelay = LOCK_DELAY_FRAMES;
     lockResetCount = LOCK_RESET_MAX;
+    update_shadow();
 
-    shadow = current;
-    while (true) {
-        shadow.y += 1.0;
-        if (check_collision(&shadow)) {
-            shadow.y -= 1.0;
-            break;
-        }
+    if (bagIndex == 7) {
+        random_piece(false);
+    } else if (bagIndex == 0) {
+        random_piece(true);
     }
 }
 
-static void random_piece(bool forSecondBag) {
+static inline void random_piece(bool forSecondBag) {
     int index = forSecondBag ? 7 : 0;
 
     int *seq = LoadRandomSequence(7, 0, 6);
@@ -527,7 +515,7 @@ static void random_piece(bool forSecondBag) {
     UnloadRandomSequence(seq);
 }
 
-static bool check_collision(const Piece* p) {
+static inline bool check_collision(const Piece* p) {
     for (int i = 0; i < 4; ++i) {
         int bx = p->x + (int)SHAPES[p->type][p->rotation][i].x;
         int by = (int)p->y + (int)SHAPES[p->type][p->rotation][i].y;
@@ -542,7 +530,7 @@ static bool check_collision(const Piece* p) {
     return false;
 }
 
-static void lock_piece() {
+static inline void lock_piece() {
     for (int i = 0; i < 4; ++i) {
         int bx = current.x + (int)SHAPES[current.type][current.rotation][i].x;
         int by = (int)current.y + (int)SHAPES[current.type][current.rotation][i].y;
@@ -587,12 +575,12 @@ static int clear_lines() {
     return linesCleared;
 }
 
-static void update_score(int linesCleared) {
+static inline void update_score(int linesCleared) {
     static int combo = -1;
     if (linesCleared > 0) {
         combo++;
-        PlaySound(LoadSoundAlias(comboSound[min(combo, 8)]));
-        Sound comboSnd = LoadSoundAlias(comboSound[min(combo, 8)]);
+        PlaySound(LoadSoundAlias(comboSound[min(combo, 7)]));
+        Sound comboSnd = LoadSoundAlias(comboSound[min(combo, 7)]);
         SetSoundVolume(comboSnd, 0.3f * (linesCleared-1));
         PlaySound(comboSnd);
     } else {
@@ -618,13 +606,6 @@ static void update_score(int linesCleared) {
 }
 
 // ============================ Game Over Explode: Missing Implementations ============================
-static float Randf(float a, float b) {
-    // raylib GetRandomValue is inclusive, we map to float range
-    int r = GetRandomValue(0, 10000);
-    float t = (float)r / 10000.0f;
-    return a + (b - a) * t;
-}
-
 static void Explode_SpawnPiece(int* explodeCount) {
     int ox, oy, cell, gridW, gridH;
     getBoardGrid(&ox, &oy, &cell, &gridW, &gridH);
